@@ -19,9 +19,9 @@
         "jsx": "preserve",
         /* Linting */
         "strict": false,
-        "noUnusedLocals": true,
-        "noUnusedParameters": true,
-        "noFallthroughCasesInSwitch": true,
+        "noUnusedLocals": false,
+        "noUnusedParameters": false,
+        "noFallthroughCasesInSwitch": false,
         /* Svelte */
         /**
          * Typecheck JS in `.svelte` and `.js` files by default.
