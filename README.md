@@ -15,6 +15,7 @@
     - Change icons at the top of the document
     - Insert icons into document content
         - Trigger icon insertion by typing something like `:home`
+        - After installing the plugin, it takes effect on newly opened document tabs, but not on already opened ones, which need to be reopened;
     - Modify icons in document content
         - Only custom icon files can be modified, official emoji font icons cannot be modified;
 3. Input search in the search box
