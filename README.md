@@ -10,13 +10,20 @@
 ## Usage
 
 1. Install the plugin;
-2. Insert or modify icons in the document tree, document icon modification, or within documents;
-    - Anywhere that can pop up the emoji search box can be used;
-    - Instructions for inserting icons in the document:
-        - When inserting a new icon, there is no search box, you can randomly select an icon first;
-        - Then click on this icon to modify it, at which point the search box will appear;
-3. After finding results, click on any icon under the Iconify group;
-    - The plugin will automatically download the icon to the local emoji folder and apply it to the corresponding location.
+2. The following icon operations are supported:
+    - Change icons in the document directory tree
+    - Change icons at the top of the document
+    - Insert icons into document content
+        - Trigger icon insertion by typing something like `:home`
+    - Modify icons in document content
+        - Only custom icon files can be modified, official emoji font icons cannot be modified;
+3. Input search in the search box
+    - Iconify search is only triggered when there is input content in the search box, and iconify content will be displayed after searching;
+    - Iconify only supports English search, Chinese and other languages cannot be searched;
+4. After finding results, click any icon under the iconify group with the mouse;
+    - At this point, the plugin will automatically download the icon to the local `emoji` folder and apply it to the corresponding location;
+    - Mouse clicking is required, `Enter` key is not supported;
+    - When inserting a new icon in document content, after clicking with the mouse, you need to input a space for the new icon to display;
 
 ## Credits
 

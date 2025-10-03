@@ -1,6 +1,4 @@
-import {
-    Plugin
-} from "siyuan";
+import {IMenuItem, IProtyle, Plugin} from "siyuan";
 import {Client} from "@siyuan-community/siyuan-sdk";
 
 import 'iconify-icon'
@@ -9,11 +7,15 @@ import "./index.scss";
 import {debounce} from "es-toolkit";
 import stringHash from "string-hash";
 import {TinyColor} from "@ctrl/tinycolor";
+import {getSelectionOffset} from "@/SiyuanUtils";
+import {values} from "es-toolkit/compat";
 
 
-export default class PluginSample extends Plugin {
+export default class IconifyPlugin extends Plugin {
 
     unloadActions = [];
+    protyleCleaners = new WeakMap<IProtyle, () => void>()
+    protyleCleanersIndex = new Set<IProtyle>()
     client: Client;
 
 
@@ -30,9 +32,13 @@ export default class PluginSample extends Plugin {
 
     unloadListeners() {
         this.unloadActions.forEach((f) => f());
+        this.protyleCleanersIndex.forEach(protyle => {
+            this.protyleCleaners.get(protyle)?.()
+        })
     }
 
     onLayoutReady() {
+        // console.log("onLayoutReady")
 
         const rootObserver = new MutationObserver((mutationList) => {
             for (const mutation of mutationList) {
@@ -41,7 +47,7 @@ export default class PluginSample extends Plugin {
                 }
                 for (const node of mutation.addedNodes) {
                     const n = (node as HTMLElement);
-                    if (n?.getAttribute('data-key') === 'dialog-emojis') {
+                    if (n && n.getAttribute && n?.getAttribute('data-key') === 'dialog-emojis') {
                         const container = n.querySelector('.emojis');
                         this.setupContainer(container as HTMLElement);
                     }
@@ -66,15 +72,60 @@ export default class PluginSample extends Plugin {
             }
         })
 
-        this.eventBus.on('loaded-protyle-static', (event) => {
-            const hint = event.detail.protyle.hint;
+        let loadProtyleListener = (event) => {
+            let protyle: IProtyle = event.detail.protyle;
+            const hint = protyle.hint;
             if (hint) {
+                // console.log('hint试验', protyle, hint)
                 protyleObserver.observe(hint.element, config);
                 this.unloadActions.push(() => protyleObserver.disconnect);
+                this.initHintInputListener(protyle);
             }
-        });
+        };
+        this.eventBus.on('loaded-protyle-static', loadProtyleListener);
+        this.unloadActions.push(() => this.eventBus.off('loaded-protyle-static', loadProtyleListener));
 
+        let destroyProtyleListener = (event) => {
+            this.protyleCleanersIndex.delete(event.detail.protyle)
+            this.protyleCleaners.delete(event.detail.protyle)
+        };
+        this.eventBus.on('destroy-protyle', destroyProtyleListener)
+        this.unloadActions.push(() => this.eventBus.off('destroy-protyle', destroyProtyleListener));
     }
+
+    private initHintInputListener(protyle: IProtyle) {
+        const hint = protyle.hint
+        let element = protyle.wysiwyg.element;
+        let listener = debounce((e) => {
+            if (hint.splitChar === ':') {
+                // console.log('input', event, hint)
+                const start = getSelectionOffset(protyle.toolbar.range.startContainer, element).start;
+                let currentLineValue = protyle.toolbar.range.startContainer.textContent.substring(0, start) || "";
+                currentLineValue = currentLineValue.trim();
+                // @ts-ignore
+                // const key: string = hint.getKey(currentLineValue, protyle.options.hint.extend);
+                let key: string
+                if (currentLineValue.includes(':')) {
+                    let number = currentLineValue.lastIndexOf(':');
+                    key = currentLineValue.substring(number + 1);
+                }
+                if (key) {
+                    // console.log('hint key', key, hint, e, start, currentLineValue)
+                    let container: HTMLElement = hint.element.querySelector('.emojis');
+                    if (container) {
+                        this.updateIconifyContainer(key, container, this.hintCurrentRequestId);
+                    }
+                }
+            }
+        }, 300);
+        element.addEventListener('input', listener)
+        this.protyleCleaners.set(protyle, () => {
+            element?.removeEventListener('input', listener)
+        })
+        this.protyleCleanersIndex.add(protyle)
+    }
+
+    hintCurrentRequestId = {id: 0}
 
     async onunload() {
         this.unloadListeners();
@@ -93,26 +144,26 @@ export default class PluginSample extends Plugin {
     }
 
     attachSearchHandler(input: HTMLInputElement, container: HTMLElement) {
-        let currentRequestId = 0; // 防止旧请求覆盖新结果
+        let currentRequestId = {id: 0}; // 防止旧请求覆盖新结果
 
         input.addEventListener('input', debounce(async (e) => {
             const query: string = e.target.value.trim();
-            const requestId = ++currentRequestId;
-            if (query.length < 2) return;
-            try {
-                const icons = await this.searchIconify(query);
-                if (requestId !== currentRequestId) return; // 丢弃过期请求
-                // 清除旧的 Iconify 分组
-                const existingGroup = container.querySelector('.iconify-result-group');
-                if (existingGroup) existingGroup.remove();
-
-                if (icons.length > 0) {
-                    await this.injectIconifyResults(icons, container);
-                }
-            } catch (err) {
-                console.warn('Iconify 搜索失败', err);
-            }
+            await this.updateIconifyContainer(query, container, currentRequestId);
         }, 300));
+    }
+
+
+    async updateIconifyContainer(query: string, container: HTMLElement, currentRequestId: { id: number }) {
+        const requestId = ++currentRequestId.id;
+        if (query.length < 2) return;
+        try {
+            const icons = await this.searchIconify(query);
+            if (requestId !== currentRequestId.id) return; // 丢弃过期请求
+            await this.injectIconifyResults(icons, container);
+
+        } catch (err) {
+            console.warn('Iconify 搜索失败', err);
+        }
     }
 
     /**
@@ -121,13 +172,28 @@ export default class PluginSample extends Plugin {
      * @param container
      */
     async injectIconifyResults(icons: string[], container: HTMLElement) {
+        // 清除旧的 Iconify 分组
+        const iconifyResultGroupClass = 'iconify-result-group'
+        container.querySelectorAll('.' + iconifyResultGroupClass).forEach(group => group.remove());
+
+        if (icons.length === 0) {
+            return
+        }
+        let parentElementClassList = container.parentElement.classList;
+        if (parentElementClassList.contains('protyle-hint') && parentElementClassList.contains('fn__none')) {
+            parentElementClassList.remove('fn__none')
+        }
+
         const panel: HTMLElement = container.querySelector('.emojis__panel')
         const titleDiv = document.createElement('div')
         titleDiv.textContent = 'Iconify'
-        titleDiv.className = 'emojis__title'
+        // titleDiv.className = 'emojis__title' //加了这个class后，结果会不删除原来输入的内容
+        titleDiv.classList.add(iconifyResultGroupClass, 'iconify_emojis__title')
+        titleDiv.setAttribute('data-type', 'iconify')
         panel.appendChild(titleDiv)
         const groupDiv = document.createElement('div')
-        groupDiv.classList.add('iconify-result-group', 'emojis__content')
+        // groupDiv.appendChild(titleDiv)
+        groupDiv.classList.add('emojis__content', iconifyResultGroupClass)
         const filesResp = await this.client.readDir({path: '/data/emojis/iconify'})
         const existsFiles = filesResp.data.map(file => file.name)
         icons.forEach(iconName => {
