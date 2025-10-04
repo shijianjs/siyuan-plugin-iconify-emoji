@@ -1,2 +1,14 @@
 {
+  "iconSearchLimit": {
+    "title": "搜索数量",
+    "description": "图标搜索数量限制，默认50"
+  },
+  "iconSearchDebounce": {
+    "title": "搜索防抖",
+    "description": "图标搜索防抖延时，单位毫秒，默认300毫秒，不少于200毫秒"
+  },
+  "newIconHintDelay": {
+    "title": "文档插入新图标延时",
+    "description": "文档插入新图标时，需要延时等待图标保存，否则显示不出来。单位毫秒，默认300毫秒，不少于100毫秒"
+  }
 }

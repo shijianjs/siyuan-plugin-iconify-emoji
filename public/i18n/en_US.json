@@ -1,2 +1,14 @@
 {
+  "iconSearchLimit": {
+    "title": "Search Limit",
+    "description": "Icon search limit, default is 50"
+  },
+  "iconSearchDebounce": {
+    "title": "Search Debounce",
+    "description": "Icon search debounce delay, in milliseconds, default 300ms, minimum 200ms"
+  },
+  "newIconHintDelay": {
+    "title": "New Icon Insertion Delay",
+    "description": "When inserting a new icon into the document, a delay is needed to wait for the icon to be saved, otherwise it won't display. In milliseconds, default 300ms, minimum 100ms"
+  }
 }

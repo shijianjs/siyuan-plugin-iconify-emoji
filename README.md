@@ -24,7 +24,23 @@
 4. After finding results, click any icon under the iconify group with the mouse;
     - At this point, the plugin will automatically download the icon to the local `emoji` folder and apply it to the corresponding location;
     - Mouse clicking is required, `Enter` key is not supported;
-    - When inserting a new icon in document content, after clicking with the mouse, you need to input a space for the new icon to display;
+
+## Plugin Configuration Description
+
+### Search Limit
+**Description**: Icon search result limit, default is 50
+
+Controls the maximum number of icon search results returned to avoid performance issues caused by too many results.
+
+### Search Debounce
+**Description**: Icon search debounce delay, in milliseconds, default 300ms, minimum 200ms
+
+Sets the debounce delay time for search input to reduce frequent search requests and improve performance.
+
+### New Icon Insertion Delay
+**Description**: When inserting a new icon into the document, a delay is needed to wait for the icon to be saved, otherwise it won't display. In milliseconds, default 300ms, minimum 100ms
+
+Sets the waiting time after inserting a new icon to ensure the icon can be properly saved and displayed.
 
 ## Credits
 

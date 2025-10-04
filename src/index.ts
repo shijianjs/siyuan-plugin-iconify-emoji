@@ -4,15 +4,23 @@ import {Client} from "@siyuan-community/siyuan-sdk";
 import 'iconify-icon'
 import "./index.scss";
 
-import {debounce} from "es-toolkit";
+import {debounce, delay} from "es-toolkit";
 import stringHash from "string-hash";
 import {TinyColor} from "@ctrl/tinycolor";
 import {getSelectionOffset} from "@/SiyuanUtils";
-import {values} from "es-toolkit/compat";
+import {max, values} from "es-toolkit/compat";
+import type zh_CN from '../public/i18n/zh_CN.json'
+import {SettingUtils} from "@/libs/setting-utils";
 
+type IconAddMode = 'search' | 'hint'
+
+const iconSearchLimit = 'iconSearchLimit'
+const iconSearchDebounce = 'iconSearchDebounce'
+const newIconHintDelay = 'newIconHintDelay'
 
 export default class IconifyPlugin extends Plugin {
-
+    private settingUtils: SettingUtils;
+    typedI18n: typeof zh_CN
     unloadActions = [];
     protyleCleaners = new WeakMap<IProtyle, () => void>()
     protyleCleanersIndex = new Set<IProtyle>()
@@ -20,6 +28,8 @@ export default class IconifyPlugin extends Plugin {
 
 
     async onload() {
+        this.typedI18n = this.i18n as any
+        await this.initSettings();
         this.client = new Client({})
 
         await this.client.putFile({
@@ -29,6 +39,46 @@ export default class IconifyPlugin extends Plugin {
         })
 
     }
+
+
+    async initSettings() {
+        this.settingUtils = new SettingUtils({
+            plugin: this
+        });
+        this.settingUtils.addItem({
+            key: iconSearchLimit,
+            value: 50,
+            type: "number",
+            title: this.typedI18n.iconSearchLimit.title,
+            description: this.typedI18n.iconSearchLimit.description,
+        });
+        this.settingUtils.addItem({
+            key: iconSearchDebounce,
+            value: 300,
+            type: "number",
+            title: this.typedI18n.iconSearchDebounce.title,
+            description: this.typedI18n.iconSearchDebounce.description,
+        });
+        this.settingUtils.addItem({
+            key: newIconHintDelay,
+            value: 300,
+            type: "number",
+            title: this.typedI18n.newIconHintDelay.title,
+            description: this.typedI18n.newIconHintDelay.description,
+        });
+        await this.settingUtils.load(); //导入配置并合并
+    }
+
+    get iconSearchLimit():number{
+        return this.settingUtils.get(iconSearchLimit)
+    }
+    get iconSearchDebounce():number{
+        return max([this.settingUtils.get(iconSearchDebounce),200])
+    }
+    get newIconHintDelay():number{
+        return max([this.settingUtils.get(newIconHintDelay),100])
+    }
+
 
     unloadListeners() {
         this.unloadActions.forEach((f) => f());
@@ -96,7 +146,7 @@ export default class IconifyPlugin extends Plugin {
     private initHintInputListener(protyle: IProtyle) {
         const hint = protyle.hint
         let element = protyle.wysiwyg.element;
-        let listener = debounce((e) => {
+        let listener = debounce(async (e) => {
             if (hint.splitChar === ':') {
                 // console.log('input', event, hint)
                 const start = getSelectionOffset(protyle.toolbar.range.startContainer, element).start;
@@ -113,11 +163,11 @@ export default class IconifyPlugin extends Plugin {
                     // console.log('hint key', key, hint, e, start, currentLineValue)
                     let container: HTMLElement = hint.element.querySelector('.emojis');
                     if (container) {
-                        this.updateIconifyContainer(key, container, this.hintCurrentRequestId);
+                        await this.updateIconifyContainer(key, container, this.hintCurrentRequestId,'hint');
                     }
                 }
             }
-        }, 300);
+        }, this.iconSearchDebounce);
         element.addEventListener('input', listener)
         this.protyleCleaners.set(protyle, () => {
             element?.removeEventListener('input', listener)
@@ -149,17 +199,17 @@ export default class IconifyPlugin extends Plugin {
         input.addEventListener('input', debounce(async (e) => {
             const query: string = e.target.value.trim();
             await this.updateIconifyContainer(query, container, currentRequestId);
-        }, 300));
+        }, this.iconSearchDebounce));
     }
 
 
-    async updateIconifyContainer(query: string, container: HTMLElement, currentRequestId: { id: number }) {
+    async updateIconifyContainer(query: string, container: HTMLElement, currentRequestId: { id: number },mode:IconAddMode='search') {
         const requestId = ++currentRequestId.id;
         if (query.length < 2) return;
         try {
             const icons = await this.searchIconify(query);
             if (requestId !== currentRequestId.id) return; // 丢弃过期请求
-            await this.injectIconifyResults(icons, container);
+            await this.injectIconifyResults(icons, container,mode);
 
         } catch (err) {
             console.warn('Iconify 搜索失败', err);
@@ -168,10 +218,8 @@ export default class IconifyPlugin extends Plugin {
 
     /**
      *
-     * @param icons
-     * @param container
      */
-    async injectIconifyResults(icons: string[], container: HTMLElement) {
+    async injectIconifyResults(icons: string[], container: HTMLElement, mode: IconAddMode='search') {
         // 清除旧的 Iconify 分组
         const iconifyResultGroupClass = 'iconify-result-group'
         container.querySelectorAll('.' + iconifyResultGroupClass).forEach(group => group.remove());
@@ -225,6 +273,9 @@ export default class IconifyPlugin extends Plugin {
                     // console.log(e)
                     // 创建一个与原始事件相同的指针事件
                     const clonedEvent = new PointerEvent(e.type, e);
+                    if (mode === 'hint'){
+                        await delay(this.newIconHintDelay)
+                    }
                     button.dispatchEvent(clonedEvent)
                 }
             }
@@ -234,7 +285,7 @@ export default class IconifyPlugin extends Plugin {
 
     private async searchIconify(query: string): Promise<string[]> {
         try {
-            const res = await fetch(`https://api.iconify.design/search?query=${encodeURIComponent(query)}&limit=50`);
+            const res = await fetch(`https://api.iconify.design/search?query=${encodeURIComponent(query)}&limit=${this.iconSearchLimit}`);
             const data = await res.json();
             return data.icons || [];
         } catch (err) {
