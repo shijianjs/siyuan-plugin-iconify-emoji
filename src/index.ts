@@ -67,6 +67,13 @@ export default class IconifyPlugin extends Plugin {
             title: this.typedI18n.enableIconHint.title,
             description: this.typedI18n.enableIconHint.description,
         });
+        this.settingUtils.addItem({
+            key: newIconHintDelay,
+            value: 300,
+            type: "number",
+            title: this.typedI18n.newIconHintDelay.title,
+            description: this.typedI18n.newIconHintDelay.description,
+        });
         await this.settingUtils.load(); //导入配置并合并
     }
 
