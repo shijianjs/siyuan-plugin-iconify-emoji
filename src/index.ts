@@ -17,6 +17,7 @@ type IconAddMode = 'search' | 'hint'
 const iconSearchLimit = 'iconSearchLimit'
 const iconSearchDebounce = 'iconSearchDebounce'
 const newIconHintDelay = 'newIconHintDelay'
+const enableIconHint = 'enableIconHint'
 
 export default class IconifyPlugin extends Plugin {
     private settingUtils: SettingUtils;
@@ -60,11 +61,11 @@ export default class IconifyPlugin extends Plugin {
             description: this.typedI18n.iconSearchDebounce.description,
         });
         this.settingUtils.addItem({
-            key: newIconHintDelay,
-            value: 300,
-            type: "number",
-            title: this.typedI18n.newIconHintDelay.title,
-            description: this.typedI18n.newIconHintDelay.description,
+            key: enableIconHint,
+            value: true,
+            type: "checkbox",
+            title: this.typedI18n.enableIconHint.title,
+            description: this.typedI18n.enableIconHint.description,
         });
         await this.settingUtils.load(); //导入配置并合并
     }
@@ -77,6 +78,9 @@ export default class IconifyPlugin extends Plugin {
     }
     get newIconHintDelay():number{
         return max([this.settingUtils.get(newIconHintDelay),100])
+    }
+    get enableIconHint():boolean{
+        return this.settingUtils.get(enableIconHint)
     }
 
 
@@ -147,20 +151,24 @@ export default class IconifyPlugin extends Plugin {
         const hint = protyle.hint
         let element = protyle.wysiwyg.element;
         let listener = debounce(async (e) => {
-            if (hint.splitChar === ':') {
+            if (hint.splitChar === ':' && this.enableIconHint) {
                 // console.log('input', event, hint)
                 const start = getSelectionOffset(protyle.toolbar.range.startContainer, element).start;
                 let currentLineValue = protyle.toolbar.range.startContainer.textContent.substring(0, start) || "";
-                currentLineValue = currentLineValue.trim();
+                // currentLineValue = currentLineValue.trim(); // 不再trim，输入空格代表不再需要提示
                 // @ts-ignore
-                // const key: string = hint.getKey(currentLineValue, protyle.options.hint.extend);
-                let key: string
-                if (currentLineValue.includes(':')) {
-                    let number = currentLineValue.lastIndexOf(':');
-                    key = currentLineValue.substring(number + 1);
-                }
+                const key: string = hint.getKey(currentLineValue, protyle.options.hint.extend);
+                // let key: string
+                // if (currentLineValue.includes(':')) {
+                //     let number = currentLineValue.lastIndexOf(':');
+                //     key = currentLineValue.substring(number + 1);
+                // }
                 if (key) {
                     // console.log('hint key', key, hint, e, start, currentLineValue)
+                    if (/\s/.test(key)){
+                        return;
+                    }
+                    console.log('hint key', key)
                     let container: HTMLElement = hint.element.querySelector('.emojis');
                     if (container) {
                         await this.updateIconifyContainer(key, container, this.hintCurrentRequestId,'hint');
