@@ -18,6 +18,15 @@ const iconSearchLimit = 'iconSearchLimit'
 const iconSearchDebounce = 'iconSearchDebounce'
 const newIconHintDelay = 'newIconHintDelay'
 const enableIconHint = 'enableIconHint'
+// iconSearchType
+const iconSearchType = 'iconSearchType'
+// yesiconLanguage
+const yesiconLanguage = 'yesiconLanguage'
+
+enum IconSearchTypeEnum {
+    iconify='iconify',
+    yesicon='yesicon'
+}
 
 export default class IconifyPlugin extends Plugin {
     private settingUtils: SettingUtils;
@@ -45,6 +54,44 @@ export default class IconifyPlugin extends Plugin {
     async initSettings() {
         this.settingUtils = new SettingUtils({
             plugin: this
+        });
+        this.settingUtils.addItem({
+            key: iconSearchType,
+            value: IconSearchTypeEnum.iconify,
+            type: "select",
+            title: this.typedI18n.iconSearchType.title,
+            description: this.typedI18n.iconSearchType.description,
+            options: {
+                [IconSearchTypeEnum.iconify]: IconSearchTypeEnum.iconify,
+                [IconSearchTypeEnum.yesicon]: IconSearchTypeEnum.yesicon
+            },
+        });
+        // - [English](https://yesicon.app/search/table?lang=en)
+        // - [简体中文](https://yesicon.app/search/table?lang=zh-hans)
+        // - [Español](https://yesicon.app/search/table?lang=es)
+        // - [正體中文](https://yesicon.app/search/table?lang=zh-hant)
+        // - [Deutsch](https://yesicon.app/search/table?lang=de)
+        // - [日本語](https://yesicon.app/search/table?lang=ja)
+        // - [Français](https://yesicon.app/search/table?lang=fr)
+        // - [한국어](https://yesicon.app/search/table?lang=ko)
+        // - [Português](https://yesicon.app/search/table?lang=pt)
+        this.settingUtils.addItem({
+            key: yesiconLanguage,
+            value: 'zh-hans',
+            type: "select",
+            title: this.typedI18n.yesiconLanguage.title,
+            description: this.typedI18n.yesiconLanguage.description,
+            options: {
+                'en': 'English',
+                'zh-hans': '简体中文',
+                'es': 'Español',
+                'zh-hant': '正體中文',
+                'de': 'Deutsch',
+                'ja': '日本語',
+                'fr': 'Français',
+                'ko': '한국어',
+                'pt': 'Português'
+            },
         });
         this.settingUtils.addItem({
             key: iconSearchLimit,
@@ -88,6 +135,12 @@ export default class IconifyPlugin extends Plugin {
     }
     get enableIconHint():boolean{
         return this.settingUtils.get(enableIconHint)
+    }
+    get iconSearchType():IconSearchTypeEnum{
+        return this.settingUtils.get(iconSearchType) ?? IconSearchTypeEnum.iconify
+    }
+    get yesiconLanguage():string{
+        return this.settingUtils.get(yesiconLanguage) ?? 'zh-hans'
     }
 
 
@@ -222,7 +275,7 @@ export default class IconifyPlugin extends Plugin {
         const requestId = ++currentRequestId.id;
         if (query.length < 2) return;
         try {
-            const icons = await this.searchIconify(query);
+            const icons = await this.searchIcon(query);
             if (requestId !== currentRequestId.id) return; // 丢弃过期请求
             await this.injectIconifyResults(icons, container,mode);
 
@@ -298,14 +351,28 @@ export default class IconifyPlugin extends Plugin {
         panel.appendChild(groupDiv)
     }
 
-    private async searchIconify(query: string): Promise<string[]> {
+    async searchIcon(query: string): Promise<string[]> {
         try {
-            const res = await fetch(`https://api.iconify.design/search?query=${encodeURIComponent(query)}&limit=${this.iconSearchLimit}`);
-            const data = await res.json();
-            return data.icons || [];
+            if (this.iconSearchType===IconSearchTypeEnum.iconify){
+                return await this.searchIconify(query);
+            }else if (this.iconSearchType===IconSearchTypeEnum.yesicon){
+                return await this.searchYesicon(query);
+            }
         } catch (err) {
             return [];
         }
+    }
+
+    async searchIconify(query: string) {
+        const res = await fetch(`https://api.iconify.design/search?query=${encodeURIComponent(query)}&limit=${this.iconSearchLimit}`);
+        const data = await res.json();
+        return data.icons || [];
+    }
+    async searchYesicon(query: string) {
+        const res = await fetch(
+            `https://yesicon.app/api/search?page=1&size=${this.iconSearchLimit}&cate&style&collection&q=${encodeURIComponent(query)}&locale=${this.yesiconLanguage}&omit=1&c=1`);
+        const data = await res.json();
+        return data.icons?.map(it=>it.id) || [];
     }
 
     private calcColor(iconName: string) {

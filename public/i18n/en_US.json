@@ -1,4 +1,12 @@
 {
+  "iconSearchType": {
+    "title": "Search Type",
+    "description": "Two search types for icon API, default is iconify official:\n1. iconify official, only supports English search of original icon names, does not support Chinese search;\n2. yesicon, supports English + localized language search, such as Chinese and English search, but with slower response speed."
+  },
+  "yesiconLanguage": {
+    "title": "Yesicon Search Language",
+    "description": "Language used when enabling yesicon search. Yesicon supports English + localized language search, default is Chinese and English search. Supported languages: English, 简体中文, Español, 正體中文, Deutsch, 日本語, Français, 한국어, Português"
+  },
   "iconSearchLimit": {
     "title": "Search Limit",
     "description": "Icon search limit, default is 50"

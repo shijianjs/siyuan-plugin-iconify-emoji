@@ -1,4 +1,12 @@
 {
+  "iconSearchType": {
+    "title": "搜索类型",
+    "description": "图标api两种搜索类型，默认iconify官方：\n1. iconify官方，仅支持原始图标名称的英文搜索，不支持中文搜索；\n2. yesicon，支持英文+本地化语言搜索，如中英文搜索，但响应速度较慢。"
+  },
+  "yesiconLanguage": {
+    "title": "yesicon搜索语言",
+    "description": "开启yesicon搜索时使用的语言。yesicon支持英文+本地化语言搜索，默认中英文搜索。支持语言：English、简体中文、Español、正體中文、Deutsch、日本語、Français、한국어、Português"
+  },
   "iconSearchLimit": {
     "title": "搜索数量",
     "description": "图标搜索数量限制，默认50"
