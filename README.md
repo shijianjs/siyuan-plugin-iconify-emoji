@@ -87,6 +87,21 @@ won't display. Unit milliseconds, default 300 milliseconds, no less than 100 mil
 
 Set the waiting time after inserting a new icon to ensure the icon can be saved and displayed correctly.
 
+
+## Changelog
+
+| Version | Changes |
+|---------|---------|
+| v1.3.0 | Added YesIcon multi-language (e.g., Chinese) search support, switchable between Iconify and YesIcon |
+| v1.2.2 | Fixed new icon hint delay configuration |
+| v1.2.1 | Added document icon insertion toggle, optimized icon hint trigger logic, fixed search debounce configuration |
+| v1.2.0 | Added configurable options for icon search and insertion (search limit, debounce delay, insertion delay), fixed first-time icon display issue |
+| v1.1.1 | Version bump |
+| v1.1.0 | Implemented icon insertion and modification in document content |
+| v1.0.0 | Initial release with Iconify icon search and insertion functionality |
+
+
+
 ## Credits
 
 - [siyuan](https://github.com/siyuan-note/siyuan)
