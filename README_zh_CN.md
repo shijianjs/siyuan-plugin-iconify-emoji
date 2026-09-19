@@ -81,6 +81,7 @@
 
 | 版本 | 主要更新 |
 |------|---------|
+| v1.3.2 | 改用 Iconify 官方 API（`getIcon` + `buildIcon` + `iconToHTML`）生成图标 SVG，修复 api.iconify.design 被 403 拦截的问题；颜色改由 svg 的 `style` 注入 |
 | v1.3.0 | 支持 YesIcon 多语言（如中文）搜索，可在 Iconify 官方和 YesIcon 之间切换 |
 | v1.2.2 | 修复新图标提示延迟配置项 |
 | v1.2.1 | 添加文档图标插入开关配置，优化图标提示触发逻辑，修复搜索防抖配置问题 |

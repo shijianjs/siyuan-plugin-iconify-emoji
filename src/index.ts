@@ -1,7 +1,7 @@
 import {IMenuItem, IProtyle, Plugin} from "siyuan";
 import {Client} from "@siyuan-community/siyuan-sdk";
 
-import 'iconify-icon'
+import {buildIcon, getIcon, iconToHTML} from 'iconify-icon'
 import "./index.scss";
 
 import {debounce, delay} from "es-toolkit";
@@ -329,9 +329,13 @@ export default class IconifyPlugin extends Plugin {
                 button.onclick = async (e) => {
                     // 阻止事件冒泡，避免触发思源原生直接设置
                     e.stopPropagation()
-                    const svgIconifyUrl = `https://api.iconify.design/${iconName}.svg?color=${encodeURIComponent(color)}`
-                    // console.log(iconName)
-                    const svgText: string = await (await fetch(svgIconifyUrl)).text()
+                    let svgText: string
+                    try {
+                        svgText = await this.getIconSvg(icon, color)
+                    } catch (err) {
+                        console.warn('Iconify 图标获取失败', err)
+                        return
+                    }
                     await this.client.putFile({
                         path: `/data/emojis/iconify/${svgFileName}`,
                         // data: svgText转blobPart
@@ -373,6 +377,45 @@ export default class IconifyPlugin extends Plugin {
             `https://yesicon.app/api/search?page=1&size=${this.iconSearchLimit}&cate&style&collection&q=${encodeURIComponent(query)}&locale=${this.yesiconLanguage}&omit=1&c=1`);
         const data = await res.json();
         return data.icons?.map(it=>it.id) || [];
+    }
+
+    /**
+     * 获取图标的 svg 字符串，并把颜色通过 style 注入到 svg 标签上
+     * （iconify 图标内部使用 fill="currentColor"，设置 color 即可生效）。
+     * 避免直接请求 api.iconify.design 被 Cloudflare 403 拦截。
+     *
+     * 优先使用 iconify-icon 官方导出的 getIcon + buildIcon + iconToHTML：
+     * 图标已被组件渲染过，数据在缓存中，不会发起新的网络请求。
+     */
+    private async getIconSvg(icon: HTMLElement, color: string): Promise<string> {
+        const iconName = icon.getAttribute('icon')
+        const data = iconName ? getIcon(iconName) : undefined
+        if (data) {
+            const {body, attributes} = buildIcon(data)
+            return iconToHTML(body, {...attributes, style: `color: ${color}`})
+        }
+        // 兜底：直接从 shadowRoot 取组件已渲染好的 svg
+        const timeout = 1000
+        const start = Date.now()
+        let rawSvg = ''
+        while (Date.now() - start < timeout) {
+            rawSvg = (icon.shadowRoot?.innerHTML || '').trim()
+            if (rawSvg.includes('<svg')) {
+                break
+            }
+            await delay(50)
+        }
+        if (!rawSvg.includes('<svg')) {
+            throw new Error(`无法获取 iconify 图标 svg: ${iconName}`)
+        }
+        const wrapper = document.createElement('div')
+        wrapper.innerHTML = rawSvg
+        const svg = wrapper.querySelector('svg')
+        if (!svg) {
+            throw new Error(`iconify 图标 svg 解析失败: ${iconName}`)
+        }
+        svg.style.color = color
+        return svg.outerHTML
     }
 
     private calcColor(iconName: string) {

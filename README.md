@@ -93,6 +93,7 @@ Set the waiting time after inserting a new icon to ensure the icon can be saved 
 
 | Version | Changes |
 |---------|---------|
+| v1.3.2 | Switched to Iconify's official API (`getIcon` + `buildIcon` + `iconToHTML`) to generate icon SVG, fixing the 403 block from api.iconify.design; color is now injected via the svg `style` |
 | v1.3.0 | Added YesIcon multi-language (e.g., Chinese) search support, switchable between Iconify and YesIcon |
 | v1.2.2 | Fixed new icon hint delay configuration |
 | v1.2.1 | Added document icon insertion toggle, optimized icon hint trigger logic, fixed search debounce configuration |
