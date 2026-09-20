@@ -288,28 +288,47 @@ export default class IconifyPlugin extends Plugin {
      *
      */
     async injectIconifyResults(icons: string[], container: HTMLElement, mode: IconAddMode='search') {
-        // 清除旧的 Iconify 分组
         const iconifyResultGroupClass = 'iconify-result-group'
-        container.querySelectorAll('.' + iconifyResultGroupClass).forEach(group => group.remove());
-
-        if (icons.length === 0) {
+        const panel: HTMLElement = container.querySelector('.emojis__panel')
+        if (!panel) {
             return
         }
+        // 父容器存在则复用，不存在再插入：避免每次搜索都移除重建，
+        // 导致和其他插件生成的分组相互挤压、位置不稳定
+        let groupElement = panel.querySelector<HTMLElement>('.' + iconifyResultGroupClass)
+        if (!groupElement) {
+            groupElement = document.createElement('div')
+            groupElement.classList.add(iconifyResultGroupClass)
+
+            const titleDiv = document.createElement('div')
+            titleDiv.textContent = 'Iconify'
+            // titleDiv.className = 'emojis__title' //加了这个class后，结果会不删除原来输入的内容
+            titleDiv.classList.add('iconify_emojis__title')
+            titleDiv.setAttribute('data-type', 'iconify')
+            groupElement.appendChild(titleDiv)
+
+            const contentElement = document.createElement('div')
+            contentElement.classList.add('emojis__content')
+            groupElement.appendChild(contentElement)
+
+            panel.appendChild(groupElement)
+        }
+
+        // 清除旧的 Iconify 图标：只清空内容，父容器留在原位
+        const contentDiv = groupElement.querySelector<HTMLElement>('.emojis__content')
+        contentDiv.innerHTML = ''
+
+        if (icons.length === 0) {
+            groupElement.classList.add('fn__none')
+            return
+        }
+        groupElement.classList.remove('fn__none')
+
         let parentElementClassList = container.parentElement.classList;
         if (parentElementClassList.contains('protyle-hint') && parentElementClassList.contains('fn__none')) {
             parentElementClassList.remove('fn__none')
         }
 
-        const panel: HTMLElement = container.querySelector('.emojis__panel')
-        const titleDiv = document.createElement('div')
-        titleDiv.textContent = 'Iconify'
-        // titleDiv.className = 'emojis__title' //加了这个class后，结果会不删除原来输入的内容
-        titleDiv.classList.add(iconifyResultGroupClass, 'iconify_emojis__title')
-        titleDiv.setAttribute('data-type', 'iconify')
-        panel.appendChild(titleDiv)
-        const groupDiv = document.createElement('div')
-        // groupDiv.appendChild(titleDiv)
-        groupDiv.classList.add('emojis__content', iconifyResultGroupClass)
         const filesResp = await this.client.readDir({path: '/data/emojis/iconify'})
         const existsFiles = filesResp.data.map(file => file.name)
         icons.forEach(iconName => {
@@ -324,7 +343,7 @@ export default class IconifyPlugin extends Plugin {
             icon.style.color = color
             button.appendChild(icon)
             button.setAttribute('aria-label', iconName)
-            groupDiv.appendChild(button)
+            contentDiv.appendChild(button)
             if (!existsFiles.includes(svgFileName)) {
                 button.onclick = async (e) => {
                     // 阻止事件冒泡，避免触发思源原生直接设置
@@ -352,7 +371,6 @@ export default class IconifyPlugin extends Plugin {
                 }
             }
         })
-        panel.appendChild(groupDiv)
     }
 
     async searchIcon(query: string): Promise<string[]> {
