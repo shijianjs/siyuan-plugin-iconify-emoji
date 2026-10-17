@@ -63,9 +63,10 @@ push / PR 到 `main` 自动运行；`gh workflow run e2e.yml -f spec=tests/xxx.s
 - `.github/workflows/auto-merge.yml`：在 PR 的 E2E 全部通过后 squash 合并。
   - 触发：`pull_request_target`（opened / reopened / synchronize / ready_for_review），也支持 `workflow_dispatch -f pr=<编号>` 手动补跑。
   - **等待时必须忽略本工作流自己的 check**（`Merge when checks pass`），否则它永远处于 in_progress，任务会自锁到超时。
+  - **有 check 明确失败时直接退出**，不要傻等：失败态（FAILURE/CANCELLED/TIMED_OUT/ACTION_REQUIRED）不会变成 SUCCESS，原本会一直等到 45 分钟超时。
   - `concurrency` 组要用 `${{ github.event.inputs.pr || github.event.pull_request.number }}`：`workflow_dispatch` 没有 `pull_request` 负载，否则所有手动触发的 run 会互相取消。
   - GitHub 异步计算 mergeable，会先返回 `UNKNOWN`，需要轮询重试几次。
-  - `GITHUB_TOKEN` **没有 `workflows` 权限**（写进 `permissions:` 会直接让 workflow 解析失败），因此修改 `.github/workflows/**` 的 PR（例如 Dependabot 升级 actions）默认跳过，留给人工合并；若配置了细粒度 PAT 密钥 `GH_PAT`（contents + pull requests write），则用 `GH_PAT` 合并，这类 PR 也能自动合。
+  - `GITHUB_TOKEN` **没有 `workflows` 权限**（写进 `permissions:` 会直接让 workflow 解析失败），因此修改 `.github/workflows/**` 的 PR（例如 Dependabot 升级 actions）默认跳过，留给人工合并。判断「有没有配置 PAT」要用 `HAS_PAT: ${{ secrets.GH_PAT != '' }}`，**不要**用 `[ "$GH_TOKEN" = "${GITHUB_TOKEN:-}" ]`：GITHUB_TOKEN 不会作为环境变量导出，该比较恒为 false，会退化成硬合并并报 `refusing to allow a GitHub App to create or update workflow ... without workflows permission`。若配置了细粒度 PAT 密钥 `GH_PAT`（contents + pull requests write），则用 `GH_PAT` 合并，这类 PR 也能自动合。
 - 改动 CI 后建议用 `gh run view <id>` 复核线上结果；workflow 文件不能带 UTF-8 BOM。
 
 ## 5. 提交约定

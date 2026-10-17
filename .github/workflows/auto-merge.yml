@@ -37,6 +37,9 @@ jobs:
           # GH_PAT (fine-grained token with contents + pull requests write) is optional;
           # without it GITHUB_TOKEN is used and PRs touching workflow files are skipped.
           GH_TOKEN: ${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}
+          # Detecting the optional PAT by string-comparing tokens is unreliable (GITHUB_TOKEN
+          # is not exported to the shell), so branch on whether the secret exists.
+          HAS_PAT: ${{ secrets.GH_PAT != '' }}
           GH_REPO: ${{ github.repository }}
           PR_NUMBER: ${{ github.event.inputs.pr || github.event.pull_request.number }}
           SELF_JOB: Merge when checks pass
@@ -53,6 +56,14 @@ jobs:
           # Poll the check list, ignoring this workflow's own check, which can never
           # reach SUCCESS while this job is still running.
           while true; do
+            # A definitively failed check never turns into SUCCESS, so stop instead of
+            # waiting for the job timeout.
+            failed=$(gh pr checks "$pr" --json name,state --jq \
+              ".[] | select(.name != \"$SELF_JOB\") | select(.state == \"FAILURE\" or .state == \"CANCELLED\" or .state == \"TIMED_OUT\" or .state == \"ACTION_REQUIRED\") | .name")
+            if [ -n "$failed" ]; then
+              echo "PR #$pr has failing checks ($failed), leaving it open"
+              exit 0
+            fi
             mapfile -t pending < <(gh pr checks "$pr" --json name,state --jq \
               ".[] | select(.name != \"$SELF_JOB\") | select(.state != \"SUCCESS\" and .state != \"SKIPPED\") | .name")
             if [ "${#pending[@]}" -eq 0 ]; then
@@ -64,7 +75,7 @@ jobs:
 
           # GITHUB_TOKEN cannot merge pull requests that change workflow files (there is
           # no "workflows" scope for GITHUB_TOKEN), so those need the optional GH_PAT.
-          if [ "$GH_TOKEN" = "${GITHUB_TOKEN:-}" ] &&
+          if [ "$HAS_PAT" != "true" ] &&
             gh pr view "$pr" --json files --jq '.files[].path' | grep -q '^\.github/workflows/'; then
             echo "PR #$pr touches workflow files, leaving it for manual merge"
             exit 0
