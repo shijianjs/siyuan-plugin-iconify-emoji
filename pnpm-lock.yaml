@@ -49,8 +49,8 @@ importers:
         specifier: ^13.0.6
         version: 13.0.6
       js-yaml:
-        specifier: ^4.1.0
-        version: 4.3.2
+        specifier: ^5.4.3
+        version: 5.4.3
       minimist:
         specifier: ^1.2.8
         version: 1.2.8
@@ -800,8 +800,8 @@ packages:
   js-base64@3.9.4:
     resolution: {integrity: sha512-PtOMXpEGuP0RRiRXsjzHzl44dMHxSu2CPvAhinupR1tBa88me+1DPqsobl7eupn5UukjLkln1ZnAOAOXOrYG0Q==}
 
-  js-yaml@4.3.2:
-    resolution: {integrity: sha512-SFNOvSJ+Dgf/9An904Yx+CgSlIPCkIpao4qo51lpee25TIRejdH3rhR4EZMGoNx3/TP3O+wzWuiTFl4sqbltzA==}
+  js-yaml@5.4.3:
+    resolution: {integrity: sha512-yzzNtgczwgoVHNigCyKTXcQJU4Y8t/ikU4UxXW0BvrLfHTGWZhsNcOT2s/a7vn81/4KqVnNmHjaUEPlvWnNwVw==}
     hasBin: true
 
   jsonfile@6.2.0:
@@ -1741,7 +1741,7 @@ snapshots:
 
   js-base64@3.9.4: {}
 
-  js-yaml@4.3.2:
+  js-yaml@5.4.3:
     dependencies:
       argparse: 2.0.1
 
