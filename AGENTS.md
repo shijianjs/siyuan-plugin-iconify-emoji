@@ -23,6 +23,7 @@
 - 所有文档建在 `Iconify E2E Testing` 笔记本，标题带功能前缀 + 随机后缀；通过用例会删除自己创建的文档，失败/超时则保留并作为附件写入报告。
 - `tests/helpers/` 放复用逻辑：`siyuanAPI.ts`（内核 API）、`runtime.ts`（打开工作空间 / 弹窗）、`plugin.ts`（emoji 面板与设置面板定位）、`settings.ts`（设置面板，按当前界面语言定位，避免写死中英文）、`iconifyApi.ts`（拦截 iconify/yesicon 外部请求的本地桩）。
 - `global-setup` / `global-teardown` 负责：校验内核、准备笔记本、**打开集市信任与全局插件开关**、启用插件，并在结束后原样还原。
+- **本地工作空间可能装了别的 emoji 插件**（`siyuan-plugin-emoji-market` / `siyuan-plugin-emoji-enhance`），它们会往 emoji 提示面板注入内容并重渲染面板，把本插件注入的分组清掉，导致提示类用例偶发失败。`global-setup` 会在测试期间临时禁用它们、结束后恢复（CI 的全新工作空间只有本插件，不会触发）。新增测试时若还发现其它干扰插件，加进 `tests/global-setup.ts` 的 `CONFLICTING_PLUGINS`。
 
 ### 内核侧必须知道的事实
 

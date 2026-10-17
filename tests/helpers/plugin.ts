@@ -60,8 +60,21 @@ export const typeIconHint = async (page: Page, query: string) => {
     await editor.click();
     await page.keyboard.press("Control+End");
     await page.keyboard.press("Enter");
-    await page.keyboard.type(`:${query}`);
     const group = page.locator(`.protyle-hint ${ICONIFY_GROUP}`).last();
+    // 本地工作空间可能同时还装有其它的 emoji 插件（例如 emoji-market），
+    // 它们会重渲染提示面板并把我们注入的分组清掉；此时再触发一次输入即可。
+    // CI 的全新工作空间只有本插件，不会走到重试分支。
+    for (let attempt = 0; attempt < 3; attempt++) {
+        await page.keyboard.type(`:${query}`);
+        try {
+            await expect(group.locator(".emojis__item").first()).toBeAttached({timeout: 6000});
+            return group;
+        } catch {
+            await page.keyboard.press("Escape");
+            await page.keyboard.press("Control+a");
+            await page.keyboard.press("Backspace");
+        }
+    }
     await expect(group.locator(".emojis__item").first()).toBeAttached({timeout: 15000});
     return group;
 };

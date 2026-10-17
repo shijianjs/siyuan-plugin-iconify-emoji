@@ -10,6 +10,7 @@ interface ISetupState {
     pluginStateChanged: boolean;
     bazaarConf?: Record<string, unknown>;
     bazaarChanged: boolean;
+    disabledPlugins?: string[];
 }
 
 /** 恢复 global-setup 中临时改动的插件启用状态与全局插件开关。 */
@@ -19,7 +20,8 @@ export default async function globalTeardown() {
     }
     const state = JSON.parse(fs.readFileSync(STATE_FILE, "utf-8")) as ISetupState;
     fs.rmSync(STATE_FILE, {force: true});
-    if (!state.pluginStateChanged && !state.bazaarChanged) {
+    const disabledPlugins = state.disabledPlugins ?? [];
+    if (!state.pluginStateChanged && !state.bazaarChanged && disabledPlugins.length === 0) {
         return;
     }
 
@@ -34,6 +36,10 @@ export default async function globalTeardown() {
         if (state.bazaarChanged && state.bazaarConf) {
             await api.setBazaarConf(state.bazaarConf);
             console.log("[iconify-e2e] 已恢复全局插件开关配置");
+        }
+        for (const name of disabledPlugins) {
+            await api.setPluginEnabled(name, true);
+            console.log(`[iconify-e2e] 已恢复插件 ${name} 的启用状态：true`);
         }
     } finally {
         await context.dispose();
