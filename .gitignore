@@ -1,7 +1,6 @@
 .idea
 .vscode
 .DS_Store
-pnpm-lock.yaml
 pnpm-workspace.yaml
 package-lock.json
 package.zip
@@ -10,3 +9,11 @@ dev
 dist
 build
 tmp
+test-results
+playwright-report
+blob-report
+playwright/.cache
+tests/.plugin-state.json
+ci-workspace
+siyuan-kernel.log
+siyuan-plugin-tree.log
