@@ -216,8 +216,11 @@ export default class IconifyPlugin extends Plugin {
                 const start = getSelectionOffset(protyle.toolbar.range.startContainer, element).start;
                 let currentLineValue = protyle.toolbar.range.startContainer.textContent.substring(0, start) || "";
                 // currentLineValue = currentLineValue.trim(); // 不再trim，输入空格代表不再需要提示
+                // hint.getKey 的签名是 (currentLineValue, textAfterCaret, extend)，
+                // 第三个参数 extend 必须传入，否则内部 extend.forEach 会抛错导致提示失效；
+                // textAfterCaret 只服务于块引提示（如 `[[`），emoji 提示用不到，传空串即可。
                 // @ts-ignore
-                const key: string = hint.getKey(currentLineValue, protyle.options.hint.extend);
+                const key: string = hint.getKey(currentLineValue, "", protyle.options.hint.extend);
                 // let key: string
                 // if (currentLineValue.includes(':')) {
                 //     let number = currentLineValue.lastIndexOf(':');
