@@ -81,6 +81,7 @@
 
 | 版本 | 主要更新 |
 |------|---------|
+| v1.3.4 | 修复 `:icon` 提示（为 `hint.getKey` 补上必要参数），保存后重载 emoji 配置，解决 Linux 上新保存的图标不出现在提示中的问题 |
 | v1.3.3 | Iconify 分组父容器改为存在即复用、不存在再插入，不再每次搜索都移除重建，避免与其他插件注入的分组互相挤压导致位置跳动 |
 | v1.3.2 | 改用 Iconify 官方 API（`getIcon` + `buildIcon` + `iconToHTML`）生成图标 SVG，修复 api.iconify.design 被 403 拦截的问题；颜色改由 svg 的 `style` 注入 |
 | v1.3.0 | 支持 YesIcon 多语言（如中文）搜索，可在 Iconify 官方和 YesIcon 之间切换 |

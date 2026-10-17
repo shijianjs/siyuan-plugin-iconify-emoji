@@ -93,6 +93,7 @@ Set the waiting time after inserting a new icon to ensure the icon can be saved 
 
 | Version | Changes |
 |---------|---------|
+| v1.3.4 | Fix `:icon` hints (pass the required argument to `hint.getKey`) and reload the emoji config after saving so newly saved icons show up in hints on Linux |
 | v1.3.3 | Reuse the Iconify result group container (reuse if present, insert only if absent) instead of removing and re-inserting it, avoiding position jitter caused by other plugins' injected groups |
 | v1.3.2 | Switched to Iconify's official API (`getIcon` + `buildIcon` + `iconToHTML`) to generate icon SVG, fixing the 403 block from api.iconify.design; color is now injected via the svg `style` |
 | v1.3.0 | Added YesIcon multi-language (e.g., Chinese) search support, switchable between Iconify and YesIcon |
