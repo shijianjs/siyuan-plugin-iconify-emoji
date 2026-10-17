@@ -12,8 +12,8 @@ importers:
         specifier: ^4.2.0
         version: 4.2.1
       '@siyuan-community/siyuan-sdk':
-        specifier: ^0.3.14
-        version: 0.3.17(debug@4.4.3(supports-color@7.2.0))(supports-color@7.2.0)
+        specifier: ^0.4.0
+        version: 0.4.0(debug@4.4.3(supports-color@7.2.0))(supports-color@7.2.0)
       es-toolkit:
         specifier: ^1.39.10
         version: 1.52.0
@@ -482,8 +482,8 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@siyuan-community/siyuan-sdk@0.3.17':
-    resolution: {integrity: sha512-LQV1NabPwkttLh95F3DYmIpRtjlqx3zUQbSNDkzocvczevm9iCHD77NLQtfQYMsFkrpNlOgRavsaG0ol5Bxqgg==}
+  '@siyuan-community/siyuan-sdk@0.4.0':
+    resolution: {integrity: sha512-YUnnqhk56tIjvTX3xdGSauNEmn+xODCsFZbPPaLIzCsuyMQ1JjlFh4v2v/mpX7NDX4Rqe/+eh6vHghh/jb/hNw==}
     engines: {node: '26'}
 
   '@sveltejs/vite-plugin-svelte-inspector@2.1.0':
@@ -797,8 +797,8 @@ packages:
     peerDependencies:
       ws: '*'
 
-  js-base64@3.9.3:
-    resolution: {integrity: sha512-uwYQp+VJ38FVvtim6qNbit6e9uT6dwWQ4Y1+H9TxhW5hcHjpHwoxlR0nMpqUmIFOmu4VqMxwdJA88gIVuZJQ/g==}
+  js-base64@3.9.4:
+    resolution: {integrity: sha512-PtOMXpEGuP0RRiRXsjzHzl44dMHxSu2CPvAhinupR1tBa88me+1DPqsobl7eupn5UukjLkln1ZnAOAOXOrYG0Q==}
 
   js-yaml@4.3.2:
     resolution: {integrity: sha512-SFNOvSJ+Dgf/9An904Yx+CgSlIPCkIpao4qo51lpee25TIRejdH3rhR4EZMGoNx3/TP3O+wzWuiTFl4sqbltzA==}
@@ -1124,8 +1124,8 @@ packages:
       utf-8-validate:
         optional: true
 
-  ws@8.21.3:
-    resolution: {integrity: sha512-201TZ/kPWxoPr/OKWjquZR1SWKXcvxdH+e1xrx89b3YbmzLMFCLfnaG1HFIgWzJOEWZ7MvpK++odZufgYR50Rw==}
+  ws@8.22.0:
+    resolution: {integrity: sha512-Ydggc987+RO0AnWtZ/7Wq9FtNvcrL1b/RO0ud9mWjUPgDrsAAwQSF51sm2hm1XofbU/4jkpGEsLFsZZxU+1DOg==}
     engines: {node: '>=10.0.0'}
     peerDependencies:
       bufferutil: ^4.0.1
@@ -1388,13 +1388,13 @@ snapshots:
   '@rollup/rollup-win32-x64-msvc@4.52.3':
     optional: true
 
-  '@siyuan-community/siyuan-sdk@0.3.17(debug@4.4.3(supports-color@7.2.0))(supports-color@7.2.0)':
+  '@siyuan-community/siyuan-sdk@0.4.0(debug@4.4.3(supports-color@7.2.0))(supports-color@7.2.0)':
     dependencies:
       axios: 1.20.0(debug@4.4.3(supports-color@7.2.0))(supports-color@7.2.0)
-      isomorphic-ws: 5.0.0(ws@8.21.3)
-      js-base64: 3.9.3
+      isomorphic-ws: 5.0.0(ws@8.22.0)
+      js-base64: 3.9.4
       ofetch: 1.5.1
-      ws: 8.21.3
+      ws: 8.22.0
     transitivePeerDependencies:
       - bufferutil
       - debug
@@ -1735,11 +1735,11 @@ snapshots:
 
   isexe@2.0.0: {}
 
-  isomorphic-ws@5.0.0(ws@8.21.3):
+  isomorphic-ws@5.0.0(ws@8.22.0):
     dependencies:
-      ws: 8.21.3
+      ws: 8.22.0
 
-  js-base64@3.9.3: {}
+  js-base64@3.9.4: {}
 
   js-yaml@4.3.2:
     dependencies:
@@ -2047,6 +2047,6 @@ snapshots:
 
   ws@7.5.10: {}
 
-  ws@8.21.3: {}
+  ws@8.22.0: {}
 
   yn@3.1.1: {}
