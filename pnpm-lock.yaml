@@ -29,13 +29,13 @@ importers:
         version: 1.64.0
       '@sveltejs/vite-plugin-svelte':
         specifier: ^3.1.0
-        version: 3.1.2(supports-color@7.2.0)(svelte@4.2.20)(vite@5.4.20(@types/node@20.19.43)(sass@1.104.1))
+        version: 3.1.2(supports-color@7.2.0)(svelte@4.2.20)(vite@5.4.20(@types/node@26.6.5)(sass@1.104.1))
       '@tsconfig/svelte':
         specifier: ^4.0.1
         version: 4.0.1
       '@types/node':
-        specifier: ^20.3.0
-        version: 20.19.43
+        specifier: ^26.6.5
+        version: 26.6.5
       '@types/string-hash':
         specifier: ^1.1.3
         version: 1.1.3
@@ -68,19 +68,19 @@ importers:
         version: 4.2.20
       ts-node:
         specifier: ^10.9.1
-        version: 10.9.2(@types/node@20.19.43)(typescript@5.9.3)
+        version: 10.9.2(@types/node@26.6.5)(typescript@5.9.3)
       typescript:
         specifier: ^5.1.3
         version: 5.9.3
       vite:
         specifier: ^5.2.9
-        version: 5.4.20(@types/node@20.19.43)(sass@1.104.1)
+        version: 5.4.20(@types/node@26.6.5)(sass@1.104.1)
       vite-plugin-static-copy:
         specifier: ^1.0.2
-        version: 1.0.6(vite@5.4.20(@types/node@20.19.43)(sass@1.104.1))
+        version: 1.0.6(vite@5.4.20(@types/node@26.6.5)(sass@1.104.1))
       vite-plugin-zip-pack:
         specifier: ^1.0.5
-        version: 1.2.4(vite@5.4.20(@types/node@20.19.43)(sass@1.104.1))
+        version: 1.2.4(vite@5.4.20(@types/node@26.6.5)(sass@1.104.1))
 
 packages:
 
@@ -524,8 +524,8 @@ packages:
   '@types/estree@1.0.8':
     resolution: {integrity: sha512-dWHzHa2WqEXI/O1E9OjrocMTKJl2mSrEolh1Iomrv6U+JuNwaHXsXx9bLu5gG7BUWFIN0skIQJQ/L1rIex4X6w==}
 
-  '@types/node@20.19.43':
-    resolution: {integrity: sha512-6oYBAi5ikg4Pl+kGsoYtawUMBT2zZMCvPNF7pVLnHZfd1zf38DRiWn/gT01RYCdUqkv7Fhr+C9ot4/tb+2sVvA==}
+  '@types/node@26.6.5':
+    resolution: {integrity: sha512-uMzsv9stDdofIZBx4UGh4Z9ZgXnGC9seRDscilBcTHAeOFk67MZg/k9bWVfO+bk4qZmG+l52hRnLwUiH2LnJTg==}
 
   '@types/string-hash@1.1.3':
     resolution: {integrity: sha512-p6skq756fJWiA59g2Uss+cMl6tpoDGuCBuxG0SI1t0NwJmYOU66LAMS6QiCgu7cUh3/hYCaMl5phcCW1JP5wOA==}
@@ -1109,8 +1109,8 @@ packages:
   ufo@1.6.4:
     resolution: {integrity: sha512-JFNbkD1Svwe0KvGi8GOeLcP4kAWQ609twvCdcHxq1oSL8svv39ZuSvajcD8B+5D0eL4+s1Is2D/O6KN3qcTeRA==}
 
-  undici-types@6.21.0:
-    resolution: {integrity: sha512-iwDZqg0QAGrg9Rav5H4n0M64c3mkR59cJ6wQp+7C4nI0gsmExaedaYLNO44eT4AtBBwjbTiGPMlt2Md0T9H9JQ==}
+  undici-types@8.9.0:
+    resolution: {integrity: sha512-KTDyRTYX8sWmKXAikPHHSyc63CRPETMctyjKFupcC6OBLXT3xsN0e9aF7m+mIXutFWpUXuedtowG7iLOzp0kQg==}
 
   universalify@2.0.1:
     resolution: {integrity: sha512-gptHNQghINnc/vTGIk0SOFGFNXw7JVrlRUtConJRlvaw6DuX0wO5Jeko9sWrMBhh+PsYAZ7oXAiOnf/UKogyiw==}
@@ -1484,26 +1484,26 @@ snapshots:
       - supports-color
       - utf-8-validate
 
-  '@sveltejs/vite-plugin-svelte-inspector@2.1.0(@sveltejs/vite-plugin-svelte@3.1.2(supports-color@7.2.0)(svelte@4.2.20)(vite@5.4.20(@types/node@20.19.43)(sass@1.104.1)))(supports-color@7.2.0)(svelte@4.2.20)(vite@5.4.20(@types/node@20.19.43)(sass@1.104.1))':
+  '@sveltejs/vite-plugin-svelte-inspector@2.1.0(@sveltejs/vite-plugin-svelte@3.1.2(supports-color@7.2.0)(svelte@4.2.20)(vite@5.4.20(@types/node@26.6.5)(sass@1.104.1)))(supports-color@7.2.0)(svelte@4.2.20)(vite@5.4.20(@types/node@26.6.5)(sass@1.104.1))':
     dependencies:
-      '@sveltejs/vite-plugin-svelte': 3.1.2(supports-color@7.2.0)(svelte@4.2.20)(vite@5.4.20(@types/node@20.19.43)(sass@1.104.1))
+      '@sveltejs/vite-plugin-svelte': 3.1.2(supports-color@7.2.0)(svelte@4.2.20)(vite@5.4.20(@types/node@26.6.5)(sass@1.104.1))
       debug: 4.4.3(supports-color@7.2.0)
       svelte: 4.2.20
-      vite: 5.4.20(@types/node@20.19.43)(sass@1.104.1)
+      vite: 5.4.20(@types/node@26.6.5)(sass@1.104.1)
     transitivePeerDependencies:
       - supports-color
 
-  '@sveltejs/vite-plugin-svelte@3.1.2(supports-color@7.2.0)(svelte@4.2.20)(vite@5.4.20(@types/node@20.19.43)(sass@1.104.1))':
+  '@sveltejs/vite-plugin-svelte@3.1.2(supports-color@7.2.0)(svelte@4.2.20)(vite@5.4.20(@types/node@26.6.5)(sass@1.104.1))':
     dependencies:
-      '@sveltejs/vite-plugin-svelte-inspector': 2.1.0(@sveltejs/vite-plugin-svelte@3.1.2(supports-color@7.2.0)(svelte@4.2.20)(vite@5.4.20(@types/node@20.19.43)(sass@1.104.1)))(supports-color@7.2.0)(svelte@4.2.20)(vite@5.4.20(@types/node@20.19.43)(sass@1.104.1))
+      '@sveltejs/vite-plugin-svelte-inspector': 2.1.0(@sveltejs/vite-plugin-svelte@3.1.2(supports-color@7.2.0)(svelte@4.2.20)(vite@5.4.20(@types/node@26.6.5)(sass@1.104.1)))(supports-color@7.2.0)(svelte@4.2.20)(vite@5.4.20(@types/node@26.6.5)(sass@1.104.1))
       debug: 4.4.3(supports-color@7.2.0)
       deepmerge: 4.3.1
       kleur: 4.1.5
       magic-string: 0.30.19
       svelte: 4.2.20
       svelte-hmr: 0.16.0(svelte@4.2.20)
-      vite: 5.4.20(@types/node@20.19.43)(sass@1.104.1)
-      vitefu: 0.2.5(vite@5.4.20(@types/node@20.19.43)(sass@1.104.1))
+      vite: 5.4.20(@types/node@26.6.5)(sass@1.104.1)
+      vitefu: 0.2.5(vite@5.4.20(@types/node@26.6.5)(sass@1.104.1))
     transitivePeerDependencies:
       - supports-color
 
@@ -1519,9 +1519,9 @@ snapshots:
 
   '@types/estree@1.0.8': {}
 
-  '@types/node@20.19.43':
+  '@types/node@26.6.5':
     dependencies:
-      undici-types: 6.21.0
+      undici-types: 8.9.0
 
   '@types/string-hash@1.1.3': {}
 
@@ -2126,14 +2126,14 @@ snapshots:
     dependencies:
       is-number: 7.0.0
 
-  ts-node@10.9.2(@types/node@20.19.43)(typescript@5.9.3):
+  ts-node@10.9.2(@types/node@26.6.5)(typescript@5.9.3):
     dependencies:
       '@cspotcode/source-map-support': 0.8.1
       '@tsconfig/node10': 1.0.11
       '@tsconfig/node12': 1.0.11
       '@tsconfig/node14': 1.0.3
       '@tsconfig/node16': 1.0.4
-      '@types/node': 20.19.43
+      '@types/node': 26.6.5
       acorn: 8.15.0
       acorn-walk: 8.3.4
       arg: 4.1.3
@@ -2148,7 +2148,7 @@ snapshots:
 
   ufo@1.6.4: {}
 
-  undici-types@6.21.0: {}
+  undici-types@8.9.0: {}
 
   universalify@2.0.1: {}
 
@@ -2156,32 +2156,32 @@ snapshots:
 
   v8-compile-cache-lib@3.0.1: {}
 
-  vite-plugin-static-copy@1.0.6(vite@5.4.20(@types/node@20.19.43)(sass@1.104.1)):
+  vite-plugin-static-copy@1.0.6(vite@5.4.20(@types/node@26.6.5)(sass@1.104.1)):
     dependencies:
       chokidar: 3.6.0
       fast-glob: 3.3.3
       fs-extra: 11.3.2
       picocolors: 1.1.1
-      vite: 5.4.20(@types/node@20.19.43)(sass@1.104.1)
+      vite: 5.4.20(@types/node@26.6.5)(sass@1.104.1)
 
-  vite-plugin-zip-pack@1.2.4(vite@5.4.20(@types/node@20.19.43)(sass@1.104.1)):
+  vite-plugin-zip-pack@1.2.4(vite@5.4.20(@types/node@26.6.5)(sass@1.104.1)):
     dependencies:
       jszip: 3.10.1
-      vite: 5.4.20(@types/node@20.19.43)(sass@1.104.1)
+      vite: 5.4.20(@types/node@26.6.5)(sass@1.104.1)
 
-  vite@5.4.20(@types/node@20.19.43)(sass@1.104.1):
+  vite@5.4.20(@types/node@26.6.5)(sass@1.104.1):
     dependencies:
       esbuild: 0.21.5
       postcss: 8.5.6
       rollup: 4.52.3
     optionalDependencies:
-      '@types/node': 20.19.43
+      '@types/node': 26.6.5
       fsevents: 2.3.3
       sass: 1.104.1
 
-  vitefu@0.2.5(vite@5.4.20(@types/node@20.19.43)(sass@1.104.1)):
+  vitefu@0.2.5(vite@5.4.20(@types/node@26.6.5)(sass@1.104.1)):
     optionalDependencies:
-      vite: 5.4.20(@types/node@20.19.43)(sass@1.104.1)
+      vite: 5.4.20(@types/node@26.6.5)(sass@1.104.1)
 
   which@2.0.2:
     dependencies:
