@@ -1,0 +1,124 @@
+name: E2E
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      spec:
+        description: "Optional extra playwright args (for example: tests/iconify-hint.spec.ts)"
+        required: false
+        default: ""
+
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  SIYUAN_VERSION: 3.8.7
+  SIYUAN_PORT: 6806
+
+jobs:
+  playwright:
+    name: Playwright integration tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      # setup-node's pnpm cache requires pnpm to exist, so install pnpm first
+      - name: Install pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 9
+          run_install: false
+
+      - name: Install Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile --config.dangerouslyAllowAllBuilds=true
+
+      # the tests run the workspace copy of dev/, so build it once before starting the kernel
+      - name: Build development bundle
+        run: pnpm build:dev
+
+      - name: Prepare SiYuan workspace
+        run: |
+          mkdir -p ci-workspace/data/plugins/siyuan-plugin-iconify-emoji
+          cp -r dev/. ci-workspace/data/plugins/siyuan-plugin-iconify-emoji/
+
+      # The kernel must serve the desktop frontend build: the browser build intentionally
+      # disables plugins, so tests would never see the petal UI.
+      - name: Download SiYuan desktop bundle
+        run: |
+          curl -fsSL -o siyuan.AppImage \
+            "https://github.com/siyuan-note/siyuan/releases/download/v${SIYUAN_VERSION}/siyuan-${SIYUAN_VERSION}-linux.AppImage"
+          chmod +x siyuan.AppImage
+          ./siyuan.AppImage --appimage-extract > /dev/null
+          # the AppDir layout differs between releases, so locate the kernel and app dir
+          KERNEL=$(find squashfs-root -type f -name 'SiYuan-Kernel' | head -1)
+          DESKTOP_BUILD=$(find squashfs-root -type d -name 'desktop' -path '*stage/build*' | head -1)
+          APP_DIR=$(dirname "$(dirname "$(dirname "$DESKTOP_BUILD")")")
+          echo "kernel=$KERNEL, app dir=$APP_DIR" >&2
+          echo "SIYUAN_KERNEL=${KERNEL}" >> "$GITHUB_ENV"
+          echo "SIYUAN_APP_DIR=${APP_DIR}" >> "$GITHUB_ENV"
+          test -f "${APP_DIR}/stage/build/desktop/index.html"
+
+      - name: Start SiYuan kernel
+        run: |
+          "${SIYUAN_KERNEL}" \
+            --workspace="${GITHUB_WORKSPACE}/ci-workspace" serve \
+            --wd="${SIYUAN_APP_DIR}" \
+            --port="${SIYUAN_PORT}" > siyuan-kernel.log 2>&1 &
+          for i in $(seq 1 60); do
+            if curl -s -X POST "http://127.0.0.1:${SIYUAN_PORT}/api/system/getWorkspaceInfo" \
+              -H 'Content-Type: application/json' -d '{}' | grep -q '"code":0'; then
+              echo "SiYuan kernel is ready"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "SiYuan kernel did not become ready"
+          tail -50 siyuan-kernel.log
+          exit 1
+
+      - name: Install Playwright browser
+        run: pnpm exec playwright install --with-deps chrome
+
+      - name: Run Playwright tests
+        env:
+          SIYUAN_BASE_URL: http://127.0.0.1:${{ env.SIYUAN_PORT }}
+        run: pnpm test:only ${{ inputs.spec }}
+
+      - name: Collect kernel log on failure
+        if: failure()
+        run: |
+          tail -80 siyuan-kernel.log || true
+          ls -R ci-workspace/data/plugins/siyuan-plugin-iconify-emoji || true
+          echo "---- plugin tree ----"
+          ls ci-workspace/data/plugins/siyuan-plugin-iconify-emoji
+          echo "---- frontend assets ----"
+          ls "${SIYUAN_APP_DIR}/stage/build/desktop" | head -20
+
+      - name: Report kernel plugin log
+        if: always()
+        run: grep -iE "petal|plugin|manifest" siyuan-kernel.log | tail -30 || true
+
+      - name: Upload artifacts on failure
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report
+          path: |
+            playwright-report
+            test-results
+            siyuan-kernel.log
+          retention-days: 7

@@ -1,0 +1,87 @@
+name: Auto Merge
+
+# Dependabot (and any other) pull requests are merged automatically once every
+# required check has succeeded. This workflow's own check is ignored while waiting.
+
+on:
+  pull_request_target:
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - ready_for_review
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: "Pull request number to try to merge"
+        required: true
+
+permissions:
+  pull-requests: write
+  contents: write
+
+concurrency:
+  # workflow_dispatch runs have no pull_request payload, so fall back to the input
+  group: auto-merge-${{ github.event.inputs.pr || github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  merge:
+    name: Merge when checks pass
+    runs-on: ubuntu-latest
+    # Wait long enough for slow runs (SiYuan bundle download plus Playwright).
+    timeout-minutes: 45
+    steps:
+      - name: Wait for checks and merge
+        env:
+          # GH_PAT (fine-grained token with contents + pull requests write) is optional;
+          # without it GITHUB_TOKEN is used and PRs touching workflow files are skipped.
+          GH_TOKEN: ${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.inputs.pr || github.event.pull_request.number }}
+          SELF_JOB: Merge when checks pass
+          MERGE_METHOD: squash
+        run: |
+          set -euo pipefail
+          pr="$PR_NUMBER"
+
+          if [ "$(gh pr view "$pr" --json isDraft --jq .isDraft)" = "true" ]; then
+            echo "Draft pull request, nothing to merge"
+            exit 0
+          fi
+
+          # Poll the check list, ignoring this workflow's own check, which can never
+          # reach SUCCESS while this job is still running.
+          while true; do
+            mapfile -t pending < <(gh pr checks "$pr" --json name,state --jq \
+              ".[] | select(.name != \"$SELF_JOB\") | select(.state != \"SUCCESS\" and .state != \"SKIPPED\") | .name")
+            if [ "${#pending[@]}" -eq 0 ]; then
+              break
+            fi
+            echo "waiting for: ${pending[*]}"
+            sleep 20
+          done
+
+          # GITHUB_TOKEN cannot merge pull requests that change workflow files (there is
+          # no "workflows" scope for GITHUB_TOKEN), so those need the optional GH_PAT.
+          if [ "$GH_TOKEN" = "${GITHUB_TOKEN:-}" ] &&
+            gh pr view "$pr" --json files --jq '.files[].path' | grep -q '^\.github/workflows/'; then
+            echo "PR #$pr touches workflow files, leaving it for manual merge"
+            exit 0
+          fi
+
+          # GitHub computes mergeability asynchronously, so give it a few attempts.
+          mergeable=""
+          for _ in $(seq 1 10); do
+            mergeable=$(gh pr view "$pr" --json mergeable --jq .mergeable)
+            [ "$mergeable" = "MERGEABLE" ] && break
+            echo "PR #$pr mergeable=$mergeable, retrying"
+            sleep 15
+          done
+          if [ "$mergeable" != "MERGEABLE" ]; then
+            echo "PR #$pr is not mergeable yet"
+            exit 0
+          fi
+
+          gh pr merge "$pr" --"$MERGE_METHOD" --delete-branch
+          echo "merged PR #$pr"
