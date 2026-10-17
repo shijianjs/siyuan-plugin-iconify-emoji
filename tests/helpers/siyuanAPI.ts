@@ -192,14 +192,15 @@ export class SiyuanAPI {
         return undefined;
     }
 
-    /** 写入工作空间文件（覆盖已有内容）。 */
-    async writeWorkspaceFile(directory: string, name: string, content: string) {
+    /** 写入工作空间文件（覆盖已有内容）。directory 为工作空间内目录，例如 /data/emojis/iconify。 */
+    async writeWorkspaceFile(directory: string, name: string, content: string, mimeType = "application/octet-stream") {
         const endpoint = "/api/file/putFile";
         const response = await this.request.post(this.resolve(endpoint), {
             multipart: {
-                "files[]": {buffer: Buffer.from(content, "utf-8"), mimeType: "application/json", name},
+                path: `${directory}/${name}`,
                 isDir: "false",
-                path: directory,
+                modTime: String(Math.floor(Date.now() / 1000)),
+                file: {buffer: Buffer.from(content, "utf-8"), mimeType, name},
             },
         });
         if (!response.ok()) {
