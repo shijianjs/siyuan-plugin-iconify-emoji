@@ -43,6 +43,7 @@
 - `setup-node` 的 `cache: pnpm` 要求先装 pnpm；且 `pnpm-lock.yaml` 必须在版本控制里，否则 CI 装依赖直接失败。
 - YAML 文件写入要避免 UTF-8 BOM：带 BOM 的 workflow 会被 GitHub 判为「workflow file issue」而整个 run 失败。workflow 内统一用英文注释。
 - **提示（hint）功能曾经整个失效**：源码里把 `hint.getKey(currentLineValue, protyle.options.hint.extend)` 当成了两参调用，实际签名是 `getKey(currentLineValue, textAfterCaret, extend)`，导致内部 `extend.forEach` 抛 `Cannot read properties of undefined`。修复是补齐第三个参数（`textAfterCaret` 只服务块引提示，emoji 提示传空串即可）。`tests/iconify-hint.spec.ts` 覆盖了这条回归。
+- **Linux 上从提示插入“新保存”的图标会变成纯文本**：插件用 `putFile` 直接写 `data/emojis/iconify/*.svg`，不走思源「添加自定义表情」的前端流程，因此不会调用 `putEmojis` 刷新 Lute；而内核的 emojis 目录监听（`kernel/model/emojis_watcher.go`）只 watch `data/emojis` 根目录，**Linux 的 inotify 不递归**，写子目录不会触发 `reloadEmojiConf`。结果：提示插入时 Lute 不认识该表情，`genEmojiInsertHTML` 生成的 `:iconify/xxx:` 被当普通文本插入（Windows 因为 ReadDirectoryChangesW 递归监听而恰好正常，所以本地测不出来）。修复：保存后显式拉一次 `/api/system/getEmojiConf` 并 `protyle.lute.PutEmojis(...)` 重建自定义表情表（见 `reloadIconifyEmojis`）。`tests/iconify-hint.spec.ts` 的插入用例就是这条回归的守门测试。
 
 ### 外部依赖用本地桩
 

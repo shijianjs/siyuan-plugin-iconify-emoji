@@ -1,4 +1,4 @@
-import {IMenuItem, IProtyle, Plugin} from "siyuan";
+import {fetchSyncPost, IMenuItem, IProtyle, Plugin} from "siyuan";
 import {Client} from "@siyuan-community/siyuan-sdk";
 
 import {buildIcon, getIcon, iconToHTML} from 'iconify-icon'
@@ -234,7 +234,7 @@ export default class IconifyPlugin extends Plugin {
                     console.log('hint key', key)
                     let container: HTMLElement = hint.element.querySelector('.emojis');
                     if (container) {
-                        await this.updateIconifyContainer(key, container, this.hintCurrentRequestId,'hint');
+                        await this.updateIconifyContainer(key, container, this.hintCurrentRequestId,'hint', protyle);
                     }
                 }
             }
@@ -274,13 +274,13 @@ export default class IconifyPlugin extends Plugin {
     }
 
 
-    async updateIconifyContainer(query: string, container: HTMLElement, currentRequestId: { id: number },mode:IconAddMode='search') {
+    async updateIconifyContainer(query: string, container: HTMLElement, currentRequestId: { id: number },mode:IconAddMode='search', protyle?: IProtyle) {
         const requestId = ++currentRequestId.id;
         if (query.length < 2) return;
         try {
             const icons = await this.searchIcon(query);
             if (requestId !== currentRequestId.id) return; // 丢弃过期请求
-            await this.injectIconifyResults(icons, container,mode);
+            await this.injectIconifyResults(icons, container,mode, protyle);
 
         } catch (err) {
             console.warn('Iconify 搜索失败', err);
@@ -288,9 +288,38 @@ export default class IconifyPlugin extends Plugin {
     }
 
     /**
+     * 把新保存的图标同步进前端 Lute 的表情表。
+     *
+     * 插件是直接 putFile 写文件的，不经过思源「添加自定义表情」的前端流程，
+     * 因此不会调用 putEmojis 刷新 Lute。内核的 emojis 目录监听在 Linux 上不递归，
+     * 写进 iconify/ 子目录也不会触发 reloadEmojiConf。结果是：在 Linux 里从 `:` 提示
+     * 插入新图标时，Lute 不认识该表情，会把 `:iconify/xxx:` 当成普通文本插入。
+     * 这里主动重建一次自定义表情表，保证各平台行为一致。
+     */
+    private async reloadIconifyEmojis(protyle?: IProtyle) {
+        const lute = protyle?.lute;
+        if (!lute) return;
+        try {
+            const resp = await fetchSyncPost('/api/system/getEmojiConf', {});
+            if (resp.code !== 0 || !Array.isArray(resp.data)) return;
+            window.siyuan.emojis = resp.data;
+            const emojiPath = (protyle.options as any)?.hint?.emojiPath ?? '/emojis';
+            const custom = (resp.data as any[]).find(category => category.id === 'custom');
+            if (!custom?.items?.length) return;
+            const emojis: Record<string, string> = {};
+            custom.items.forEach((item: any) => {
+                emojis[item.keywords] = `${emojiPath}/${item.unicode}`;
+            });
+            lute.PutEmojis(emojis);
+        } catch (err) {
+            console.warn('Iconify 表情配置刷新失败', err);
+        }
+    }
+
+    /**
      *
      */
-    async injectIconifyResults(icons: string[], container: HTMLElement, mode: IconAddMode='search') {
+    async injectIconifyResults(icons: string[], container: HTMLElement, mode: IconAddMode='search', protyle?: IProtyle) {
         const iconifyResultGroupClass = 'iconify-result-group'
         const panel: HTMLElement = container.querySelector('.emojis__panel')
         if (!panel) {
@@ -364,6 +393,8 @@ export default class IconifyPlugin extends Plugin {
                         file: svgText,
                     })
                     button.onclick = null
+                    // 新图标写盘后先刷新 Lute 表情表，否则提示插入会退化成纯文本
+                    await this.reloadIconifyEmojis(protyle)
                     // console.log(e)
                     // 创建一个与原始事件相同的指针事件
                     const clonedEvent = new PointerEvent(e.type, e);
