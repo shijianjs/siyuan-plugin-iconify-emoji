@@ -22,19 +22,12 @@
         "noUnusedLocals": false,
         "noUnusedParameters": false,
         "noFallthroughCasesInSwitch": false,
-        /* Svelte */
-        /**
-         * Typecheck JS in `.svelte` and `.js` files by default.
-         * Disable checkJs if you'd like to use dynamic types in JS.
-         * Note that setting allowJs false does not prevent the use
-         * of JS in `.svelte` files.
-        */
+        /* Svelte 相关配置已随模板组件一并移除 */
         "allowJs": true,
         "checkJs": true,
         "types": [
             "node",
-            "vite/client",
-            "svelte"
+            "vite/client"
         ],
         // "baseUrl": "./src",
         "paths": {
@@ -43,12 +36,8 @@
         }
     },
     "include": [
-        "tools/**/*.ts",
         "src/**/*.ts",
-        "src/**/*.d.ts",
-        "src/**/*.tsx",
-        "src/**/*.vue",
-        "src/**/*.svelte"
+        "src/**/*.d.ts"
     ],
     "references": [
         {
