@@ -176,8 +176,8 @@ importers:
         specifier: ^1.39.10
         version: 1.52.0
       iconify-icon:
-        specifier: ^3.0.1
-        version: 3.0.3
+        specifier: ^3.0.4
+        version: 3.0.4
       string-hash:
         specifier: ^1.1.3
         version: 1.1.3
@@ -910,8 +910,8 @@ packages:
     resolution: {integrity: sha512-dFcAjpTQFgoLMzC2VwU+C/CbS7uRL0lWmxDITmqm7C+7F0Odmj6s9l6alZc6AELXhrnggM2CeWSXHGOdX2YtwA==}
     engines: {node: '>= 6'}
 
-  iconify-icon@3.0.3:
-    resolution: {integrity: sha512-n4ZIChz3N75KqFSWLt9hHGzbrqGQeeoFxCE+nND4WFFa88x8AW8GvmnVZaVNYErhhiZkxJhBfVKMIGrF1wt3hg==}
+  iconify-icon@3.0.4:
+    resolution: {integrity: sha512-au7IER/1evWjPP1rtueNnBdge9E9ocoPfQ87RYTLkRMYpNt87xn5oy6i5U2qRp+wXul5aV0VyPuZAf7rt+jpRg==}
 
   immediate@3.0.6:
     resolution: {integrity: sha512-XXOFtyqDjNDAQxVfYxuF7g9Il/IbWmmlQg2MYKOH8ExIT1qg6xc4zyS3HaEEATgs1btfzxq15ciUiY7gjSXRGQ==}
@@ -1729,7 +1729,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  iconify-icon@3.0.3:
+  iconify-icon@3.0.4:
     dependencies:
       '@iconify/types': 2.0.0
 

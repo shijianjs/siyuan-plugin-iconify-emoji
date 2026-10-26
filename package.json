@@ -44,7 +44,7 @@
     "@ctrl/tinycolor": "^4.2.0",
     "@siyuan-community/siyuan-sdk": "^0.4.0",
     "es-toolkit": "^1.39.10",
-    "iconify-icon": "^3.0.1",
+    "iconify-icon": "^3.0.4",
     "string-hash": "^1.1.3"
   }
 }
