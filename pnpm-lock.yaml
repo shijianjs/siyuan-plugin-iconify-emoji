@@ -207,8 +207,8 @@ importers:
         specifier: ^1.106.1
         version: 1.106.1
       siyuan:
-        specifier: 1.1.2
-        version: 1.1.2
+        specifier: 1.2.9
+        version: 1.2.9
       typescript:
         specifier: ^7.0.2
         version: 7.0.2
@@ -227,6 +227,15 @@ packages:
   '@ctrl/tinycolor@4.2.1':
     resolution: {integrity: sha512-Vh5uy9Y1JBMId6J1f68TMXnZrTCvNdo9Fu2k0d1YnJngR+sM5kWTKl441c/3TFs+cG0NWOjRWgQ/iaWhbYx+7A==}
     engines: {node: '>=14'}
+
+  '@dop251/types-goja_nodejs-buffer@0.0.0-20260918183711-b481721df8a2':
+    resolution: {integrity: sha512-RWaDBwsOPEtZhajOiOiMRIQYvQKZdtq9XrDhc49upOs3lIb5E9hj7AK90nUI9kI9qULQ4lDVvI94joTlDkH1Lg==}
+
+  '@dop251/types-goja_nodejs-global@0.0.0-20260918183711-b481721df8a2':
+    resolution: {integrity: sha512-nE+7cM9ncPqboXC6jJ60AJJghVfIwN1iXT2E8lgzLJ2LM8b6BjteDU49jq03XAl+8IJG8AuID/pt3D7w5zcCjg==}
+
+  '@dop251/types-goja_nodejs-url@0.0.0-20260918183711-b481721df8a2':
+    resolution: {integrity: sha512-o4k1jM2mA4lvmdPYYbDeslXQlfFb+ezk5T4HplpRW0lBTmABDIgBV/tbdXAhIkcEtL5jcQJ3Kgnw+N9E/WMFQw==}
 
   '@epic-web/invariant@1.0.0':
     resolution: {integrity: sha512-lrTPqgvfFQtR/eY/qkIzp98OGdNJu0m5ji3q/nJI8v3SXkRKEnWiOxMmbvcSoAIzv/cGiuvRy57k4suKQSAdwA==}
@@ -1019,8 +1028,8 @@ packages:
     resolution: {integrity: sha512-7++dFhtcx3353uBaq8DDR4NuxBetBzC7ZQOhmTQInHEd6bSrXdiEyzCvG07Z44UYdLShWUyXt5M/yhz8ekcb1A==}
     engines: {node: '>=8'}
 
-  siyuan@1.1.2:
-    resolution: {integrity: sha512-jDwB2LubNPoxzybTmUb33kXTxdMZEQ3VFb7ZAGSBNUoXDDvo6NAPavlcocsBfY3FVeoAzVBx9WcYmn9gAEGmvA==}
+  siyuan@1.2.9:
+    resolution: {integrity: sha512-2bZTzTZocnOxPqY4liGtY2ZDhnhkYgySrlVLCCKWHjmGZ4kJYru0T1hFz5Hro0bz7cvecIEAx7XRV4plIvW1jQ==}
 
   source-map-js@1.2.2:
     resolution: {integrity: sha512-KGj/8Y43x35aZVDtt+J4mK1hoLGHULMYfSkODJNQjNDC3oW1PqPoxMwo0pLUsWM/UEGzON/NxeHywEfNXNP3Vw==}
@@ -1141,9 +1150,22 @@ packages:
       utf-8-validate:
         optional: true
 
+  zod@4.6.7:
+    resolution: {integrity: sha512-g8W2D2kU6a8untc053fX1uVBKzM7yqAxW/3zwk83+6RyF2+SKOuV+c0wBDhUwzV1PaGapmZH+rmcUzPf+3CGwg==}
+
 snapshots:
 
   '@ctrl/tinycolor@4.2.1': {}
+
+  '@dop251/types-goja_nodejs-buffer@0.0.0-20260918183711-b481721df8a2':
+    dependencies:
+      '@dop251/types-goja_nodejs-global': 0.0.0-20260918183711-b481721df8a2
+
+  '@dop251/types-goja_nodejs-global@0.0.0-20260918183711-b481721df8a2': {}
+
+  '@dop251/types-goja_nodejs-url@0.0.0-20260918183711-b481721df8a2':
+    dependencies:
+      '@dop251/types-goja_nodejs-global': 0.0.0-20260918183711-b481721df8a2
 
   '@epic-web/invariant@1.0.0': {}
 
@@ -1782,7 +1804,12 @@ snapshots:
 
   shebang-regex@3.0.0: {}
 
-  siyuan@1.1.2: {}
+  siyuan@1.2.9:
+    dependencies:
+      '@dop251/types-goja_nodejs-buffer': 0.0.0-20260918183711-b481721df8a2
+      '@dop251/types-goja_nodejs-global': 0.0.0-20260918183711-b481721df8a2
+      '@dop251/types-goja_nodejs-url': 0.0.0-20260918183711-b481721df8a2
+      zod: 4.6.7
 
   source-map-js@1.2.2: {}
 
@@ -1867,3 +1894,5 @@ snapshots:
   ws@7.5.10: {}
 
   ws@8.22.0: {}
+
+  zod@4.6.7: {}
