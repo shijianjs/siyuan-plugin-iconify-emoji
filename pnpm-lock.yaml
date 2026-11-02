@@ -167,8 +167,8 @@ importers:
   .:
     dependencies:
       '@ctrl/tinycolor':
-        specifier: ^4.2.0
-        version: 4.2.1
+        specifier: ^4.2.2
+        version: 4.2.2
       '@siyuan-community/siyuan-sdk':
         specifier: ^0.4.0
         version: 0.4.0(debug@4.4.3(supports-color@7.2.0))(supports-color@7.2.0)
@@ -224,8 +224,8 @@ importers:
 
 packages:
 
-  '@ctrl/tinycolor@4.2.1':
-    resolution: {integrity: sha512-Vh5uy9Y1JBMId6J1f68TMXnZrTCvNdo9Fu2k0d1YnJngR+sM5kWTKl441c/3TFs+cG0NWOjRWgQ/iaWhbYx+7A==}
+  '@ctrl/tinycolor@4.2.2':
+    resolution: {integrity: sha512-9rQHijqB2Rq6qOEC/xHaA6aPlsKGi5kmCQW50O1asn9g63XFeD5NmBwysriistW5Xx0JPafyD/TA7yk2S3pXGQ==}
     engines: {node: '>=14'}
 
   '@dop251/types-goja_nodejs-buffer@0.0.0-20260918183711-b481721df8a2':
@@ -1155,7 +1155,7 @@ packages:
 
 snapshots:
 
-  '@ctrl/tinycolor@4.2.1': {}
+  '@ctrl/tinycolor@4.2.2': {}
 
   '@dop251/types-goja_nodejs-buffer@0.0.0-20260918183711-b481721df8a2':
     dependencies:
