@@ -150,10 +150,17 @@ classDiagram
 
 ## 5. CI 流水线（`.github/workflows/e2e.yml`）
 
-push / PR 到 `main` 自动运行；`gh workflow run e2e.yml -f spec=tests/xxx.spec.ts` 可只跑单个文件。
+PR 到 `main` 自动运行（push 到 `main` 不再触发，见 workflow 里的注释）；`gh workflow run e2e.yml -f spec=tests/xxx.spec.ts` 可只跑单个文件。
 
 - 流程：`pnpm install` → `build:dev` → 复制 `dev/` 到 `ci-workspace/data/plugins/<name>` → 下载官方**桌面版 AppImage** → `--appimage-extract` → `SiYuan-Kernel serve --wd=<appdir> --workspace=ci-workspace --port=6806` → `playwright install --with-deps chrome` → 跑 Playwright。
 - 失败上传 `playwright-report` / `test-results` / `siyuan-kernel.log`；始终打印内核的 petal/plugin 日志。
+
+### 发版（tag → release）
+
+- 版本号改两处：`plugin.json` 与 `package.json` 的 `version`（`pnpm run update-version` 是交互式的，等价于手工改这两个文件）。按 semver：功能新增 / 重构走 minor，纯修复走 patch。
+- 推 `v*` tag 会触发 `.github/workflows/release.yml`：`pnpm install` → `pnpm build` → 用 `ncipollo/release-action`（`allowUpdates: true`）把 `package.zip` 挂到同名 release 上。**tag 指向的提交必须是已推送的版本号提交**，否则 zip 里的 `plugin.json` 版本对不上。
+- **不要先手工 `gh release create` 再等 workflow**：workflow 会更新同一个 release，并把 release body 清空（`allowUpdates` 不保留原文）。要么只推 tag 让 workflow 建 release，要么等 workflow 跑完再 `gh release edit vX.Y.Z --notes-file notes.md` 写说明。
+- 发完核对：`gh release view vX.Y.Z --json assets,body`，并下载 zip 检查里面 `plugin.json` 的 `version`。
 
 ### 持续集成（Dependabot 与自动合并）
 
