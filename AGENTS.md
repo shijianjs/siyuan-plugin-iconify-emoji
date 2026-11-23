@@ -116,6 +116,7 @@ classDiagram
 - 所有文档建在 `Iconify E2E Testing` 笔记本，标题带功能前缀 + 随机后缀；通过用例会删除自己创建的文档，失败/超时则保留并作为附件写入报告。
 - `tests/helpers/` 放复用逻辑：`siyuanAPI.ts`（内核 API）、`runtime.ts`（打开工作空间 / 弹窗）、`plugin.ts`（emoji 面板与设置面板定位）、`settings.ts`（设置面板，按当前界面语言定位，避免写死中英文）、`iconifyApi.ts`（拦截 iconify/yesicon 外部请求的本地桩）。
 - `global-setup` / `global-teardown` 负责：校验内核、准备笔记本、**打开集市信任与全局插件开关**、启用插件，并在结束后原样还原。
+- **插件设置也会被重置为测试基线**（`tests/global-setup.ts` 的 `SETTINGS_BASELINE`：iconify 来源、50 条、300ms 防抖、提示开启），结束后写回测试前原文。本地工作空间会保留用户自己的设置（例如把来源改成 yesicon、数量改成 80），依赖 iconify 来源或默认时序的用例不能建立在它之上；需要别的取值就在用例里用 `withSetting`。
 - **本地工作空间可能装了别的 emoji 插件**（`siyuan-plugin-emoji-market` / `siyuan-plugin-emoji-enhance`），它们会往 emoji 提示面板注入内容并重渲染面板，把本插件注入的分组清掉，导致提示类用例偶发失败。`global-setup` 会在测试期间临时禁用它们、结束后恢复（CI 的全新工作空间只有本插件，不会触发）。新增测试时若还发现其它干扰插件，加进 `tests/global-setup.ts` 的 `CONFLICTING_PLUGINS`。
 
 ### 内核侧必须知道的事实
@@ -137,7 +138,7 @@ classDiagram
 - `setup-node` 的 `cache: pnpm` 要求先装 pnpm；且 `pnpm-lock.yaml` 必须在版本控制里，否则 CI 装依赖直接失败。
 - YAML 文件写入要避免 UTF-8 BOM：带 BOM 的 workflow 会被 GitHub 判为「workflow file issue」而整个 run 失败。workflow 内统一用英文注释。
 - **提示（hint）功能曾经整个失效**：源码里把 `hint.getKey(currentLineValue, protyle.options.hint.extend)` 当成了两参调用，实际签名是 `getKey(currentLineValue, textAfterCaret, extend)`，导致内部 `extend.forEach` 抛 `Cannot read properties of undefined`。修复是补齐第三个参数（`textAfterCaret` 只服务块引提示，emoji 提示传空串即可）。`tests/iconify-hint.spec.ts` 覆盖了这条回归。
-- **Linux 上从提示插入“新保存”的图标会变成纯文本**：插件用 `putFile` 直接写 `data/emojis/iconify/*.svg`，不走思源「添加自定义表情」的前端流程，因此不会调用 `putEmojis` 刷新 Lute；而内核的 emojis 目录监听（`kernel/model/emojis_watcher.go`）只 watch `data/emojis` 根目录，**Linux 的 inotify 不递归**，写子目录不会触发 `reloadEmojiConf`。结果：提示插入时 Lute 不认识该表情，`genEmojiInsertHTML` 生成的 `:iconify/xxx:` 被当普通文本插入（Windows 因为 ReadDirectoryChangesW 递归监听而恰好正常，所以本地测不出来）。修复：保存后显式拉一次 `/api/system/getEmojiConf` 并 `protyle.lute.PutEmojis(...)` 重建自定义表情表（见 `reloadIconifyEmojis`）。`tests/iconify-hint.spec.ts` 的插入用例就是这条回归的守门测试。
+- **Linux 上从提示插入“新保存”的图标会变成纯文本**：插件用 `putFile` 直接写 `data/emojis/iconify/*.svg`，不走思源「添加自定义表情」的前端流程，因此不会调用 `putEmojis` 刷新 Lute；而内核的 emojis 目录监听（`kernel/model/emojis_watcher.go`）只 watch `data/emojis` 根目录，**Linux 的 inotify 不递归**，写子目录不会触发 `reloadEmojiConf`。结果：提示插入时 Lute 不认识该表情，`genEmojiInsertHTML` 生成的 `:iconify/xxx:` 被当普通文本插入（Windows 因为 ReadDirectoryChangesW 递归监听而恰好正常，所以本地测不出来）。修复：保存后显式拉一次 `/api/system/getEmojiConf` 并 `protyle.lute.PutEmojis(...)` 重建自定义表情表（见 `IconStore#syncEmojiRegistry`）。`tests/iconify-hint.spec.ts` 的插入用例就是这条回归的守门测试。
 - **键盘 Enter 曾完全绕开插件的保存逻辑（issue #36）**：思源对 emoji 面板 / `:` 提示的 Enter 处理是直接拿 `data-unicode` 调 `applyLinkIcon` / `fill`（`app/src/emoji/index.ts` 的 search input keydown、`app/src/protyle/hint/index.ts` 的 `Hint.select`），**不会触发 click**。插件只在 `button.onclick` 里下载 svg，于是未落盘的图标会被写成 `:iconify/xxx:` 纯文本（已保存过的图标按 Enter 又正常 → “有时好有时坏”）。修复：在容器的**捕获阶段**拦 Enter（同元素上后注册的监听会被思源先执行，所以监听要挂在搜索框/编辑器监听节点的祖先上），先落盘再派发一次合成 `click` 交回思源的原生流程（`IconifyResultsPanel#activate`）；命中已落盘的图标则不拦截。鼠标与键盘共用同一条落盘路径，`tests/iconify-emoji-dialog.spec.ts` / `tests/iconify-hint.spec.ts` 的 Enter 用例覆盖。
 - **测试里 `.protyle-wysiwyg` / `.protyle:visible` 会选到富标题的 lite protyle**：思源 3.8 起富标题编辑会在正文 `.protyle` 内嵌一个 `.protyle.protyle-title__rich.protyle-lite-fragment`，它也有 `.protyle-wysiwyg`，且在 DOM 里排在正文之前，只是没有 `.protyle-top`。助手函数用 `getActiveProtyle`（排除 lite fragment）与 `getBodyWysiwyg`（XPath 按**完整类名** `protyle-wysiwyg` 匹配并排除 lite 祖先；用 `contains(@class,'protyle-wysiwyg')` 会先命中标题容器的 `protyle-wysiwyg--attr`）。
 
@@ -145,6 +146,7 @@ classDiagram
 
 - 搜索与图标数据都走外网（`api.iconify.design`、`yesicon.app`），用例必须用 `tests/helpers/iconifyApi.ts` 的 `mockIconifyApis(page, ...)` 拦截，不能用真外网，否则 CI 会受第三方限流/可用性影响。
 - iconify-icon 组件渲染图标时还会请求 `https://api.iconify.design/<prefix>.json?icons=<name>`，桩必须一并返回该格式的图标数据，否则 `getIcon` 拿不到数据、点击保存路径会失败。
+- yesicon 的搜索接口是 `https://yesicon.app/api/explorer/ui?query=…&locale=…&page=1&size=…`（旧的 `/api/search` 已下线），返回 `{icons: [{id}], total, pageInfo}`。`size` 上限 160，超过直接 400，所以 `IconSearch` 请求前会夹到 160；`includeFacets` 用不到就不传（带上响应大好几倍）。桩只认这个路径、并且要求带 `query`，路径或参数写错时用例会红。
 
 ## 5. CI 流水线（`.github/workflows/e2e.yml`）
 

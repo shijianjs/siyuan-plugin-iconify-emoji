@@ -2,6 +2,9 @@ import { IconSearchTypeEnum } from "./constants";
 import { IconRef } from "./icon-ref";
 import type { PluginSettings } from "./settings";
 
+/** yesicon 服务端允许的单页上限；超过会直接 400。 */
+const MAX_YESICON_SIZE = 160;
+
 /** 图标检索：按当前设置的来源查图标名，并把名字包成 {@link IconRef}。 */
 export class IconSearch {
     /** 来源、数量、yesicon 的语言都直接读插件设置，不在这里另存一份。 */
@@ -30,10 +33,15 @@ export class IconSearch {
 
     /** yesicon 搜索：支持按本地化语言检索（中英等）。 */
     private async fromYesicon(query: string): Promise<string[]> {
-        const res = await fetch(`https://yesicon.app/api/search?page=1&size=${this.settings.searchLimit}` +
-            `&cate&style&collection&q=${encodeURIComponent(query)}` +
-            `&locale=${this.settings.yesiconLanguage}&omit=1&c=1`);
+        // 不带 includeFacets：插件用不到 facets（分类计数），带上会让响应大出好几倍
+        const res = await fetch(`https://yesicon.app/api/explorer/ui?query=${encodeURIComponent(query)}` +
+            `&locale=${this.settings.yesiconLanguage}&page=1&size=${this.yesiconSize()}`);
         const data = await res.json();
         return data.icons?.map((icon: { id: string }) => icon.id) || [];
+    }
+
+    /** 本次向 yesicon 请求的条数：夹在服务端单页上限内，设置写再大也不会 400。 */
+    private yesiconSize(): number {
+        return Math.min(this.settings.searchLimit, MAX_YESICON_SIZE);
     }
 }

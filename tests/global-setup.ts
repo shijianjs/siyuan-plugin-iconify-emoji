@@ -1,10 +1,30 @@
 import {request} from "@playwright/test";
 import fs from "node:fs";
+import {SETTINGS_FILE} from "./helpers/plugin";
 import {getBaseURL, PLUGIN_NAME, validateTestTarget} from "./helpers/runtime";
 import {IBazaarConf, SiyuanAPI} from "./helpers/siyuanAPI";
 import {ensureTestNotebook} from "./testNotebook";
 
 const STATE_FILE = "tests/.plugin-state.json";
+const SETTINGS_PATH = `/data/${SETTINGS_FILE}`;
+const SETTINGS_DIRECTORY = SETTINGS_PATH.slice(0, SETTINGS_PATH.lastIndexOf("/"));
+const SETTINGS_NAME = SETTINGS_PATH.slice(SETTINGS_PATH.lastIndexOf("/") + 1);
+
+/**
+ * 测试期间使用的插件设置基线。
+ *
+ * 本地工作空间会保留用户自己的设置（比如把来源改成 yesicon、把数量调到 80），
+ * 依赖 iconify 来源或默认时序的用例就会失败；用例不该依赖工作空间的历史状态。
+ * 所以每次跑测试前写入这份基线，结束后在 global-teardown 里原样恢复。
+ */
+const SETTINGS_BASELINE = {
+    iconSearchType: "iconify",
+    yesiconLanguage: "zh-hans",
+    iconSearchLimit: 50,
+    iconSearchDebounce: 300,
+    enableIconHint: true,
+    newIconHintDelay: 300,
+};
 
 /**
  * 本地开发工作空间可能同时装有其它 emoji 插件（emoji-market / emoji-enhance），
@@ -20,6 +40,10 @@ interface ISetupState {
     bazaarConf?: IBazaarConf;
     bazaarChanged: boolean;
     disabledPlugins: string[];
+    /** 改写前的设置文件原文；null 表示原本没有这个文件。 */
+    settingsOriginal?: string | null;
+    /** 是否改写过设置文件。 */
+    settingsChanged?: boolean;
 }
 
 /** 运行测试前校验内核、准备笔记本，并确保插件与全局插件开关都处于可用状态。 */
@@ -65,6 +89,17 @@ export default async function globalSetup() {
                 `内核未加载插件 ${PLUGIN_NAME}，已加载：${loaded.join(", ") || "（空）"}。`,
             );
         }
+
+        // 插件每次加载都从设置文件读配置；写入基线前先记下原文，结束后恢复
+        state.settingsOriginal = (await api.readWorkspaceTextIfExists(SETTINGS_PATH)) ?? null;
+        await api.writeWorkspaceFile(
+            SETTINGS_DIRECTORY,
+            SETTINGS_NAME,
+            JSON.stringify(SETTINGS_BASELINE, null, 2),
+            "application/json",
+        );
+        state.settingsChanged = true;
+        console.log("[iconify-e2e] 已把插件设置重置为测试基线，结束后恢复");
 
         // 临时禁用会干扰 emoji 提示面板的其它插件（本地开发工作空间里可能存在）
         for (const name of CONFLICTING_PLUGINS) {
