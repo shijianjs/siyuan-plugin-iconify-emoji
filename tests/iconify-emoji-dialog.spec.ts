@@ -13,6 +13,8 @@ import {withSetting} from "./helpers/settings";
 
 /** 用例独享的图标名，避免命中工作空间里已经保存过的图标。 */
 const UNIQUE_ICON = "mdi:e2e-dialog-insert";
+/** 键盘用例单独一个图标名，保证按下 Enter 时 svg 确实还没落盘。 */
+const ENTER_ICON = "mdi:e2e-dialog-enter";
 
 const iconLabels = (group: Locator) =>
     group.locator(".emojis__item").evaluateAll(items =>
@@ -82,6 +84,34 @@ test.describe("emoji panel integration", () => {
                 `.protyle-background__icon img[src$="${emojiFileName(UNIQUE_ICON)}"]`)).toHaveCount(1);
         } finally {
             await siyuanAPI.removeWorkspaceFile(`/${emojiFilePath(UNIQUE_ICON)}`);
+        }
+    });
+
+    // issue #36：思源对 Enter 的处理只读 data-unicode，不会触发插件的保存逻辑，
+    // 插件没做键盘响应时，未落盘的图标会被写成一串 `:iconify/xxx:` 文本。
+    test("pressing Enter on a new icon saves it and sets the document icon", async ({
+        createTestDocument, page, siyuanAPI,
+    }) => {
+        await mockIconifyApis(page, {searchIcons: [ENTER_ICON]});
+        await siyuanAPI.removeWorkspaceFile(`/${emojiFilePath(ENTER_ICON)}`);
+        await createTestDocument("iconify-dialog-enter", "enter");
+
+        try {
+            const dialog = await openEmojiDialog(page);
+            const group = await searchEmoji(dialog, "nuenter");
+            // 没有原生搜索结果时，插件会把第一个 Iconify 结果标为当前项
+            await expect(group.locator(".emojis__item").first())
+                .toHaveClass(/emojis__item--current/);
+            await emojiSearchInput(dialog).press("Enter");
+
+            await expect.poll(async () => (await siyuanAPI.readDir(`/${EMOJI_DIR}`))
+                .map(file => file.name), {timeout: 10000}).toContain(emojiFileName(ENTER_ICON));
+            await expect(page.locator(
+                `.protyle-background__icon img[src$="${emojiFileName(ENTER_ICON)}"]`)).toHaveCount(1);
+            // 面板在设置成功后应关闭
+            await expect(page.locator('[data-key="dialog-emojis"]')).toHaveCount(0);
+        } finally {
+            await siyuanAPI.removeWorkspaceFile(`/${emojiFilePath(ENTER_ICON)}`);
         }
     });
 });

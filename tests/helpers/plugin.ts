@@ -8,6 +8,18 @@ export const EMOJI_DIR = "data/emojis/iconify";
 /** iconify 搜索结果分组的标记类名。 */
 export const ICONIFY_GROUP = ".iconify-result-group";
 
+/**
+ * 正文编辑器。3.8 起的富标题编辑会在 `.protyle` 内再嵌一个
+ * `.protyle.protyle-title__rich.protyle-lite-fragment`，它同样有 `.protyle-wysiwyg`，
+ * 且在 DOM 里排在正文之前；直接取 `.protyle-wysiwyg` 往往拿到标题里的编辑器。
+ */
+export const getBodyWysiwyg = (protyle: Locator) => protyle.locator(
+    // 必须按完整类名匹配：标题容器也带 `protyle-wysiwyg--attr`，用 contains(@class,'protyle-wysiwyg')
+    // 会先命中 `.protyle-title`
+    "xpath=.//div[contains(concat(' ', normalize-space(@class), ' '), ' protyle-wysiwyg ') and " +
+    "not(ancestor::div[contains(concat(' ', normalize-space(@class), ' '), ' protyle-lite-fragment ')])]",
+).first();
+
 /** 打开文档，等待编辑器加载完成并返回正文区域。 */
 export const getDocumentEditor = async (page: Page, docID: string) => {
     const titleSelector = `.protyle-title[data-node-id="${docID}"]`;
@@ -19,13 +31,19 @@ export const getDocumentEditor = async (page: Page, docID: string) => {
     const tabID = await visibleProtyle.getAttribute("data-id");
     const protyle = tabID ? page.locator(`.protyle[data-id="${tabID}"]`) : visibleProtyle;
     await expect(protyle).toHaveAttribute("data-loading", "finished", {timeout: 15000});
-    const editor = protyle.locator(".protyle-wysiwyg").first();
+    const editor = getBodyWysiwyg(protyle);
     await expect(editor).toBeVisible({timeout: 10000});
     return editor;
 };
 
-/** 当前激活的 protyle（标签页可能同时存在多个）。 */
-export const getActiveProtyle = (page: Page) => page.locator(".protyle:visible").last();
+/**
+ * 当前激活的 protyle（标签页可能同时存在多个）。
+ *
+ * 3.8 起的富标题编辑会在正文里再嵌一个 `.protyle.protyle-title__rich.protyle-lite-fragment`
+ * （它也有 `.protyle-wysiwyg`，但没有 `.protyle-top`），必须排除，否则会选到标题里的编辑器。
+ */
+export const getActiveProtyle = (page: Page) =>
+    page.locator(".protyle:visible:not(.protyle-lite-fragment):not(.protyle-title__rich)").last();
 
 /**
  * 打开文档图标选择器（emoji 面板）。
@@ -56,7 +74,7 @@ export const searchEmoji = async (dialog: Locator, query: string) => {
 
 /** 在文档正文中输入 `:关键字` 触发 emoji 提示，返回提示中的 Iconify 结果分组。 */
 export const typeIconHint = async (page: Page, query: string) => {
-    const editor = getActiveProtyle(page).locator(".protyle-wysiwyg").first();
+    const editor = getBodyWysiwyg(getActiveProtyle(page));
     await editor.click();
     await page.keyboard.press("Control+End");
     await page.keyboard.press("Enter");
