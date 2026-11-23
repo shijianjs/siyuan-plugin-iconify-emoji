@@ -1,133 +1,49 @@
-import { IProtyle, Plugin } from "siyuan";
 import { Client } from "@siyuan-community/siyuan-sdk";
+import { Plugin } from "siyuan";
 
 import "./index.scss";
 
 import type zh_CN from "../public/i18n/zh_CN.json";
-import { SettingUtils } from "@/libs/setting-utils";
+import { IconSearch } from "./icon-search";
+import { IconStore } from "./icon-store";
+import type { IconifyServices } from "./services";
+import { PluginSettings } from "./settings";
+import { IconifyUi } from "./ui";
 
-import {
-    ENABLE_ICON_HINT,
-    ICON_SEARCH_DEBOUNCE,
-    ICON_SEARCH_LIMIT,
-    ICON_SEARCH_TYPE,
-    IconSearchTypeEnum,
-    NEW_ICON_HINT_DELAY,
-    YESICON_LANGUAGE,
-} from "./constants";
-import { setupContainer } from "./emoji-panel";
-import { initHintInputListener } from "./hint";
-import { initSettings } from "./settings";
-
-export default class IconifyPlugin extends Plugin {
-    private settingUtils: SettingUtils;
+/**
+ * 插件本体：只做装配与生命周期。设置、检索、存储、界面接线各自是独立对象，
+ * 由这里一次性创建并互相注入，不再把状态摊在插件字段和模块级变量上。
+ */
+export default class IconifyPlugin extends Plugin implements IconifyServices {
+    /** 插件设置：检索来源、结果数量、提示行为等。 */
+    settings: PluginSettings;
+    /** 图标检索。 */
+    search: IconSearch;
+    /** 图标落盘仓库。 */
+    store: IconStore;
+    /** 界面接线（emoji 对话框、`:` 提示），布局就绪后才创建。 */
+    private ui?: IconifyUi;
+    /** 与 public/i18n 对齐的 i18n 类型。 */
     typedI18n: typeof zh_CN;
 
-    unloadActions: (() => void)[] = [];
-    protyleCleaners = new WeakMap<IProtyle, () => void>();
-    protyleCleanersIndex = new Set<IProtyle>();
-    client: Client;
-    hintCurrentRequestId = { id: 0 };
-
-    async onload() {
+    async onload(): Promise<void> {
         this.typedI18n = this.i18n as any;
-        this.settingUtils = await initSettings(this, this.typedI18n);
-        this.client = new Client({});
-
-        await this.client.putFile({
-            path: `/data/emojis/iconify`,
-            isDir: true,
-        });
+        this.settings = await PluginSettings.load(this, this.typedI18n);
+        this.store = new IconStore(new Client({}));
+        this.search = new IconSearch(this.settings);
+        await this.store.ensureDirectory();
     }
 
-    get iconSearchLimit(): number {
-        return this.settingUtils.get(ICON_SEARCH_LIMIT);
-    }
-    get iconSearchDebounce(): number {
-        return Math.max(this.settingUtils.get(ICON_SEARCH_DEBOUNCE), 200);
-    }
-    get newIconHintDelay(): number {
-        return Math.max(this.settingUtils.get(NEW_ICON_HINT_DELAY), 100);
-    }
-    get enableIconHint(): boolean {
-        return this.settingUtils.get(ENABLE_ICON_HINT);
-    }
-    get iconSearchType(): IconSearchTypeEnum {
-        return this.settingUtils.get(ICON_SEARCH_TYPE) ?? IconSearchTypeEnum.iconify;
-    }
-    get yesiconLanguage(): string {
-        return this.settingUtils.get(YESICON_LANGUAGE) ?? "zh-hans";
+    onLayoutReady(): void {
+        this.ui = new IconifyUi(this, this.eventBus);
+        this.ui.start();
     }
 
-    unloadListeners() {
-        this.unloadActions.forEach((f) => f());
-        this.protyleCleanersIndex.forEach(protyle => {
-            this.protyleCleaners.get(protyle)?.();
-        });
+    async onunload(): Promise<void> {
+        this.ui?.stop();
     }
 
-    onLayoutReady() {
-        const config = { attributes: false, childList: true, subtree: false };
-
-        const rootObserver = new MutationObserver((mutationList) => {
-            for (const mutation of mutationList) {
-                if (!mutation.addedNodes.length) {
-                    continue;
-                }
-                for (const node of mutation.addedNodes) {
-                    const n = (node as HTMLElement);
-                    if (n && n.getAttribute && n.getAttribute("data-key") === "dialog-emojis") {
-                        const container = n.querySelector(".emojis");
-                        setupContainer(this, container as HTMLElement);
-                    }
-                }
-            }
-        });
-        rootObserver.observe(document.body, config);
-        this.unloadActions.push(() => rootObserver.disconnect());
-
-        const protyleObserver = new MutationObserver((mutationList) => {
-            for (const mutation of mutationList) {
-                for (const node of mutation.addedNodes) {
-                    const n = (node as HTMLElement);
-                    if (n.classList.contains("emojis")) {
-                        setupContainer(this, n);
-                    }
-                }
-            }
-        });
-
-        const loadProtyleListener = (event: any) => {
-            const protyle: IProtyle = event.detail.protyle;
-            const hint = protyle.hint;
-            if (hint) {
-                protyleObserver.observe(hint.element, config);
-                this.unloadActions.push(() => protyleObserver.disconnect());
-                this.initHintInputListener(protyle);
-            }
-        };
-        this.eventBus.on("loaded-protyle-static", loadProtyleListener);
-        this.unloadActions.push(() => this.eventBus.off("loaded-protyle-static", loadProtyleListener));
-
-        const destroyProtyleListener = (event: any) => {
-            this.protyleCleanersIndex.delete(event.detail.protyle);
-            this.protyleCleaners.delete(event.detail.protyle);
-        };
-        this.eventBus.on("destroy-protyle", destroyProtyleListener);
-        this.unloadActions.push(() => this.eventBus.off("destroy-protyle", destroyProtyleListener));
-    }
-
-    private initHintInputListener(protyle: IProtyle) {
-        const cleanup = initHintInputListener(this, protyle);
-        this.protyleCleaners.set(protyle, cleanup);
-        this.protyleCleanersIndex.add(protyle);
-    }
-
-    async onunload() {
-        this.unloadListeners();
-    }
-
-    uninstall() {
+    uninstall(): void {
         // 无需额外清理
     }
 }

@@ -10,16 +10,106 @@
 - `pnpm build`：生产构建并打包 `package.zip`（zip 只在 `NODE_ENV=production` 时启用）。
 - `pnpm test` = `build:dev` + `playwright test`；`pnpm test:only` 跳过构建；`pnpm test:typecheck` 只做类型检查。
 
-## 2. 本地开发环境
+## 2. 源码结构（对象划分）
+
+插件是「组合根 + 对象」，没有模块级的可变状态：`src/index.ts` 只创建对象、转发生命周期；请求序号、
+监听清理、已落盘文件、颜色缓存都住在各自对象的字段里，方法只读写自己的字段。
+
+```mermaid
+classDiagram
+    direction LR
+    class IconifyPlugin {
+        +PluginSettings settings
+        +IconSearch search
+        +IconStore store
+        -IconifyUi ui
+    }
+    class PluginSettings {
+        +searchType
+        +searchLimit
+        +searchDebounce
+        +enableIconHint
+        +newIconHintDelay
+    }
+    class IconSearch {
+        +find(query) IconRef[]
+    }
+    class IconStore {
+        +ensureDirectory()
+        +savedFiles() Set
+        +save(icon, svg)
+        +syncEmojiRegistry(protyle)
+    }
+    class IconifyUi {
+        -PanelRegistry panels
+        -HintBinding[] bindings
+    }
+    class PanelRegistry {
+        +get(container, insertion) IconifyResultsPanel
+    }
+    class IconifyResultsPanel {
+        -int latestRequest
+        +attach()
+        +search(query)
+        +interceptEnter(event)
+    }
+    class HintBinding {
+        +start()
+        +stop()
+        -caretOffset(container)
+    }
+    class IconRef {
+        +name
+        +fileName
+        +unicode
+        +color
+        +svgFrom(component)
+    }
+
+    IconifyPlugin --> PluginSettings
+    IconifyPlugin --> IconSearch
+    IconifyPlugin --> IconStore
+    IconifyPlugin --> IconifyUi
+    IconifyUi --> PanelRegistry
+    IconifyUi --> HintBinding : 每个 protyle 一个
+    PanelRegistry --> IconifyResultsPanel : 每个 .emojis 一个
+    IconifyResultsPanel --> IconRef
+    IconifyResultsPanel ..> IconStore : 落盘 / 刷新
+    HintBinding ..> IconifyResultsPanel : 检索与 Enter
+    IconSearch --> IconRef
+```
+
+| 文件 | 对象 | 职责 |
+| --- | --- | --- |
+| `src/index.ts` | `IconifyPlugin` | 组合根：创建设置 / 检索 / 存储 / UI，转发生命周期；`implements IconifyServices` |
+| `src/settings.ts` | `PluginSettings` | 注册设置项、加载配置、把取值收成 getter |
+| `src/icon-search.ts` | `IconSearch` | 按设置的来源查 iconify / yesicon，异常降级为空结果 |
+| `src/icon-ref.ts` | `IconRef` / `IconSvgUnavailableError` | 图标名派生的文件名 / unicode / 颜色，取 svg |
+| `src/icon-store.ts` | `IconStore` | emoji 目录、svg 落盘、刷新 Lute 表情表 |
+| `src/emoji-panel.ts` | `IconifyResultsPanel` / `PanelRegistry` / `InsertionTarget` | 一个 `.emojis` 的搜索、渲染、落盘、Enter 拦截 |
+| `src/hint.ts` | `HintBinding` | 一个 protyle 的 `:` 提示：输入检索、Enter 先落盘 |
+| `src/ui.ts` | `IconifyUi` | 监听对话框与 protyle 生命周期，把面板 / 绑定挂上去 |
+| `src/services.ts` | `IconifyServices` | 设置 / 检索 / 存储三个协作者的接口 |
+
+几条不会写在别处的约定：
+
+- 同一个 `.emojis` 只建一个 `IconifyResultsPanel`（`PanelRegistry` 用 `WeakMap` 缓存），所以不需要在
+  DOM 元素上打「已挂监听」标记；`attach()` 自身幂等，`detach()` 清掉所有监听。
+- `InsertionTarget` 决定落点（对话框 `search` / 提示 `hint`），也就决定要不要在落盘后等待、要不要刷新 Lute。
+- Enter 拦截分两处挂：对话框由 `IconifyResultsPanel.guardEnter` 挂在 `.emojis` 上，提示由 `HintBinding` 挂在
+  `.protyle` 上——都必须在思源 keydown 监听节点的**祖先**的捕获阶段。
+- 颜色与 svg 获取属于图标本身（`IconRef`），文件与 Lute 刷新属于仓库（`IconStore`），两者不互相引用。
+
+## 3. 本地开发环境
 
 - 本地思源内核：`http://127.0.0.1:6806`（工作空间 `S:\my\siyuan\siyuan-debug`）。可用 `SIYUAN_BASE_URL` 覆盖。
 - 工作空间里的插件目录是指向本仓库 `dev/` 的**符号链接**（`pnpm make-link`），所以本地改代码后要 `pnpm dev` 或 `pnpm build:dev` 才能生效。
-- 前端入口固定用 `/stage/build/desktop/`，不要改成浏览器版资源（原因见第 4 节）。
+- 前端入口固定用 `/stage/build/desktop/`，不要改成浏览器版资源（原因见第 5 节）。
 - 上游资料（GitHub 源码、文档）一律读本地克隆，**不要访问 `raw.githubusercontent.com`，也不要用网页
   抓取 GitHub**：国内网络经常超时。目录约定与可参考的第三方克隆见 `../AGENTS.md`；缺仓库时按它用
   `gh repo clone` 克隆到本地再读。
 
-## 3. 集成测试（Playwright）
+## 4. 集成测试（Playwright）
 
 - 用例在 `tests/`，配置 `playwright.config.ts`，风格参考 `S:\workspace\github\siyuan-note\siyuan-testing`（不要直接依赖它）。
 - 串行执行（`workers: 1`）：emoji 面板、设置面板都是全局 UI 状态。
@@ -34,7 +124,7 @@
 - `Setting` 对话框底部有「保存」按钮，插件设置只有点保存才会落盘并生效；UI 上的输入本身不会自动保存（`SettingUtils` 没给这些项绑 `action.callback`），这是既有设计，不要在测试里假设自动保存。
 - 关闭对话框统一用 `Escape`；`b3-dialog__close` 常被 `fn__none` 隐藏。
 - **emoji 面板的 `data-key` 挂在 Dialog 的**最外层**包装 `div` 上，不是内部的 `.b3-dialog`**。所以定位要用 `[data-key="dialog-emojis"]`，再往下找 `.b3-dialog__container` / `.emojis`。
-- emoji 面板通过文档题头的「添加图标」按钮打开：`.protyle-background__action [data-type="icon"]`（先 hover `.protyle-top`）。面板里 `.emojis` 下有多个 `.b3-text-field`，插件的搜索监听只挂在**第一个**（搜索框）上，标记属性是 `input.hasIconifyListener`。
+- emoji 面板通过文档题头的「添加图标」按钮打开：`.protyle-background__action [data-type="icon"]`（先 hover `.protyle-top`）。面板里 `.emojis` 下有多个 `.b3-text-field`，插件的搜索监听只挂在**第一个**（搜索框）上；监听状态收在按 `.emojis` 缓存的面板对象里，不再往输入框上打标记，用例用「输入两个字符后出现 `.iconify-result-group`」断言监听确实挂上。
 - 文档正文里的 `:关键字` 提示（hint）由 `.protyle-hint .emojis` 承载，插件把结果分组追加进去；判断插件是否生效看 `.protyle-hint .iconify-result-group` 的 `.emojis__item`。
 - 插件把 iconify 图标保存为自定义 emoji，落到 `data/emojis/iconify/<prefix>--<name>.svg`；`readDir` / `removeFile` 都用工作空间绝对路径（`/data/emojis/iconify/...`）。
 
@@ -48,7 +138,7 @@
 - YAML 文件写入要避免 UTF-8 BOM：带 BOM 的 workflow 会被 GitHub 判为「workflow file issue」而整个 run 失败。workflow 内统一用英文注释。
 - **提示（hint）功能曾经整个失效**：源码里把 `hint.getKey(currentLineValue, protyle.options.hint.extend)` 当成了两参调用，实际签名是 `getKey(currentLineValue, textAfterCaret, extend)`，导致内部 `extend.forEach` 抛 `Cannot read properties of undefined`。修复是补齐第三个参数（`textAfterCaret` 只服务块引提示，emoji 提示传空串即可）。`tests/iconify-hint.spec.ts` 覆盖了这条回归。
 - **Linux 上从提示插入“新保存”的图标会变成纯文本**：插件用 `putFile` 直接写 `data/emojis/iconify/*.svg`，不走思源「添加自定义表情」的前端流程，因此不会调用 `putEmojis` 刷新 Lute；而内核的 emojis 目录监听（`kernel/model/emojis_watcher.go`）只 watch `data/emojis` 根目录，**Linux 的 inotify 不递归**，写子目录不会触发 `reloadEmojiConf`。结果：提示插入时 Lute 不认识该表情，`genEmojiInsertHTML` 生成的 `:iconify/xxx:` 被当普通文本插入（Windows 因为 ReadDirectoryChangesW 递归监听而恰好正常，所以本地测不出来）。修复：保存后显式拉一次 `/api/system/getEmojiConf` 并 `protyle.lute.PutEmojis(...)` 重建自定义表情表（见 `reloadIconifyEmojis`）。`tests/iconify-hint.spec.ts` 的插入用例就是这条回归的守门测试。
-- **键盘 Enter 曾完全绕开插件的保存逻辑（issue #36）**：思源对 emoji 面板 / `:` 提示的 Enter 处理是直接拿 `data-unicode` 调 `applyLinkIcon` / `fill`（`app/src/emoji/index.ts` 的 search input keydown、`app/src/protyle/hint/index.ts` 的 `Hint.select`），**不会触发 click**。插件只在 `button.onclick` 里下载 svg，于是未落盘的图标会被写成 `:iconify/xxx:` 纯文本（已保存过的图标按 Enter 又正常 → “有时好有时坏”）。修复：在容器的**捕获阶段**拦 Enter（同元素上后注册的监听会被思源先执行，所以监听要挂在搜索框/编辑器监听节点的祖先上），先落盘再派发一次合成 `click` 交回思源的原生流程（`activateIconifyItem`）；命中已落盘的图标则不拦截。鼠标与键盘共用同一条落盘路径，`tests/iconify-emoji-dialog.spec.ts` / `tests/iconify-hint.spec.ts` 的 Enter 用例覆盖。
+- **键盘 Enter 曾完全绕开插件的保存逻辑（issue #36）**：思源对 emoji 面板 / `:` 提示的 Enter 处理是直接拿 `data-unicode` 调 `applyLinkIcon` / `fill`（`app/src/emoji/index.ts` 的 search input keydown、`app/src/protyle/hint/index.ts` 的 `Hint.select`），**不会触发 click**。插件只在 `button.onclick` 里下载 svg，于是未落盘的图标会被写成 `:iconify/xxx:` 纯文本（已保存过的图标按 Enter 又正常 → “有时好有时坏”）。修复：在容器的**捕获阶段**拦 Enter（同元素上后注册的监听会被思源先执行，所以监听要挂在搜索框/编辑器监听节点的祖先上），先落盘再派发一次合成 `click` 交回思源的原生流程（`IconifyResultsPanel#activate`）；命中已落盘的图标则不拦截。鼠标与键盘共用同一条落盘路径，`tests/iconify-emoji-dialog.spec.ts` / `tests/iconify-hint.spec.ts` 的 Enter 用例覆盖。
 - **测试里 `.protyle-wysiwyg` / `.protyle:visible` 会选到富标题的 lite protyle**：思源 3.8 起富标题编辑会在正文 `.protyle` 内嵌一个 `.protyle.protyle-title__rich.protyle-lite-fragment`，它也有 `.protyle-wysiwyg`，且在 DOM 里排在正文之前，只是没有 `.protyle-top`。助手函数用 `getActiveProtyle`（排除 lite fragment）与 `getBodyWysiwyg`（XPath 按**完整类名** `protyle-wysiwyg` 匹配并排除 lite 祖先；用 `contains(@class,'protyle-wysiwyg')` 会先命中标题容器的 `protyle-wysiwyg--attr`）。
 
 ### 外部依赖用本地桩
@@ -56,7 +146,7 @@
 - 搜索与图标数据都走外网（`api.iconify.design`、`yesicon.app`），用例必须用 `tests/helpers/iconifyApi.ts` 的 `mockIconifyApis(page, ...)` 拦截，不能用真外网，否则 CI 会受第三方限流/可用性影响。
 - iconify-icon 组件渲染图标时还会请求 `https://api.iconify.design/<prefix>.json?icons=<name>`，桩必须一并返回该格式的图标数据，否则 `getIcon` 拿不到数据、点击保存路径会失败。
 
-## 4. CI 流水线（`.github/workflows/e2e.yml`）
+## 5. CI 流水线（`.github/workflows/e2e.yml`）
 
 push / PR 到 `main` 自动运行；`gh workflow run e2e.yml -f spec=tests/xxx.spec.ts` 可只跑单个文件。
 
@@ -75,7 +165,7 @@ push / PR 到 `main` 自动运行；`gh workflow run e2e.yml -f spec=tests/xxx.s
   - `GITHUB_TOKEN` **没有 `workflows` 权限**（写进 `permissions:` 会直接让 workflow 解析失败），因此修改 `.github/workflows/**` 的 PR（例如 Dependabot 升级 actions）默认跳过，留给人工合并。判断「有没有配置 PAT」要用 `HAS_PAT: ${{ secrets.GH_PAT != '' }}`，**不要**用 `[ "$GH_TOKEN" = "${GITHUB_TOKEN:-}" ]`：GITHUB_TOKEN 不会作为环境变量导出，该比较恒为 false，会退化成硬合并并报 `refusing to allow a GitHub App to create or update workflow ... without workflows permission`。若配置了细粒度 PAT 密钥 `GH_PAT`（contents + pull requests write），则用 `GH_PAT` 合并，这类 PR 也能自动合。
 - 改动 CI 后建议用 `gh run view <id>` 复核线上结果；workflow 文件不能带 UTF-8 BOM。
 
-## 5. 提交约定
+## 6. 提交约定
 
 - 除非用户明确要求，不要自行 commit / push。
 - 涉及测试或 CI 的改动请实际跑一次：本地 `npx playwright test`，并用 `gh run view <id>` 确认线上流水线状态。

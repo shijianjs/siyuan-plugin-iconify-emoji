@@ -5,6 +5,7 @@ import {
     emojiFilePath,
     emojiFileName,
     emojiSearchInput,
+    ICONIFY_GROUP,
     openEmojiDialog,
     searchEmoji,
 } from "./helpers/plugin";
@@ -24,16 +25,17 @@ test.describe("emoji panel integration", () => {
     test("opening the emoji panel attaches the plugin search handler", async ({
         createTestDocument, page,
     }) => {
+        await mockIconifyApis(page, {searchIcons: ["mdi:home"]});
         await createTestDocument("iconify-dialog-attach", "attach");
 
         const dialog = await openEmojiDialog(page);
-        await expect.poll(() => emojiSearchInput(dialog)
-            .evaluate(element => (element as HTMLElement & {hasIconifyListener?: boolean}).hasIconifyListener === true))
-            .toBe(true);
-
         // 少于两个字符不搜索，面板里不会出现 Iconify 分组
         await emojiSearchInput(dialog).fill("h");
-        await expect(dialog.locator(".iconify-result-group")).toHaveCount(0);
+        await expect(dialog.locator(ICONIFY_GROUP)).toHaveCount(0);
+
+        // 两个字符起才发请求：分组出现即说明输入监听确实挂在这个搜索框上
+        const group = await searchEmoji(dialog, "home");
+        expect(await iconLabels(group)).toEqual(["mdi:home"]);
     });
 
     test("searching renders the mocked iconify results", async ({createTestDocument, page}) => {
