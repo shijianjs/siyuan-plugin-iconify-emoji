@@ -41,8 +41,8 @@
     "vite-plugin-zip-pack": "^1.0.5"
   },
   "dependencies": {
-    "@ctrl/tinycolor": "^4.3.0",
     "@siyuan-community/siyuan-sdk": "^0.4.0",
+    "colord": "^2.14.0",
     "es-toolkit": "^1.53.2",
     "iconify-icon": "^3.0.5",
     "string-hash": "^1.1.3"

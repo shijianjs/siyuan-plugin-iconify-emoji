@@ -6,6 +6,9 @@ importers:
   .:
     configDependencies: {}
     packageManagerDependencies:
+      '@pnpm/exe':
+        specifier: 12.14.0
+        version: 12.14.0
       pnpm:
         specifier: 12.14.0
         version: 12.14.0
@@ -89,6 +92,11 @@ packages:
     cpu: [x64]
     os: [win32]
 
+  '@pnpm/exe@12.14.0':
+    resolution: {integrity: sha512-iZCbiKegYUapNVkZY4O8vjXt9EF/j34LbDvew6qUM5g/HrxMY38cFJaoE8+5ZWQfbt2YCsLfufI5TTh+GxUbWw==}
+    engines: {node: '>=18.*'}
+    hasBin: true
+
   pnpm@12.14.0:
     resolution: {integrity: sha512-wYum2HmT09Fky16JSPMrLAbuhUSH4GzY2GeBNC+z5btGNDZwNHEehoArqpw3vqkGzhkprQjXCITJfYAd8TOJpg==}
     engines: {node: '>=18.*'}
@@ -138,6 +146,23 @@ snapshots:
   '@pnpm/exe.win32-x64@12.14.0':
     optional: true
 
+  '@pnpm/exe@12.14.0':
+    optionalDependencies:
+      '@pnpm/exe.android-arm64': 12.14.0
+      '@pnpm/exe.android-x64': 12.14.0
+      '@pnpm/exe.darwin-arm64': 12.14.0
+      '@pnpm/exe.darwin-x64': 12.14.0
+      '@pnpm/exe.freebsd-x64': 12.14.0
+      '@pnpm/exe.linux-arm64': 12.14.0
+      '@pnpm/exe.linux-arm64-musl': 12.14.0
+      '@pnpm/exe.linux-ppc64': 12.14.0
+      '@pnpm/exe.linux-riscv64': 12.14.0
+      '@pnpm/exe.linux-s390x': 12.14.0
+      '@pnpm/exe.linux-x64': 12.14.0
+      '@pnpm/exe.linux-x64-musl': 12.14.0
+      '@pnpm/exe.win32-arm64': 12.14.0
+      '@pnpm/exe.win32-x64': 12.14.0
+
   pnpm@12.14.0:
     optionalDependencies:
       '@pnpm/exe.android-arm64': 12.14.0
@@ -166,12 +191,12 @@ importers:
 
   .:
     dependencies:
-      '@ctrl/tinycolor':
-        specifier: ^4.3.0
-        version: 4.3.0
       '@siyuan-community/siyuan-sdk':
         specifier: ^0.4.0
         version: 0.4.0(debug@4.4.3(supports-color@7.2.0))(supports-color@7.2.0)
+      colord:
+        specifier: ^2.14.0
+        version: 2.14.0
       es-toolkit:
         specifier: ^1.53.2
         version: 1.53.2
@@ -223,10 +248,6 @@ importers:
         version: 1.2.4(vite@8.3.8(@types/node@26.6.6)(sass@1.108.2))
 
 packages:
-
-  '@ctrl/tinycolor@4.3.0':
-    resolution: {integrity: sha512-6V0+8vw/GmH92URQ/Ki12FPhoB3nqaQUJE+5xgbFbB5ok0OXYK5jCQsQQoyR3BzCddHsCpyCFRnIcI1PSOVYkQ==}
-    engines: {node: '>=14'}
 
   '@dop251/types-goja_nodejs-buffer@0.0.0-20260918183711-b481721df8a2':
     resolution: {integrity: sha512-RWaDBwsOPEtZhajOiOiMRIQYvQKZdtq9XrDhc49upOs3lIb5E9hj7AK90nUI9kI9qULQ4lDVvI94joTlDkH1Lg==}
@@ -640,6 +661,9 @@ packages:
   chokidar@5.0.0:
     resolution: {integrity: sha512-TQMmc3w+5AxjpL8iIiwebF73dRDF4fBIieAqGn9RGCWaEVwQ6Fb2cGe31Yns0RRIzii5goJ1Y7xbMwo1TxMplw==}
     engines: {node: '>= 20.19.0'}
+
+  colord@2.14.0:
+    resolution: {integrity: sha512-eSdMel9EBvdFxnchObp7gljRoqYQLr+zXhaxjkym7syVphw1FIhfQwgsA5Bv3jArflZPJEa1rmQtGpa7NRc7Rw==}
 
   combined-stream@1.0.8:
     resolution: {integrity: sha512-FQN4MRfuJeHf7cBbBMJFXhKSDq+2kAArBlmRBvcvFE5BB1HZKXtSFASDhdlz9zOYwxh8lDdnvmMOe/+5cdoEdg==}
@@ -1179,8 +1203,6 @@ packages:
 
 snapshots:
 
-  '@ctrl/tinycolor@4.3.0': {}
-
   '@dop251/types-goja_nodejs-buffer@0.0.0-20260918183711-b481721df8a2':
     dependencies:
       '@dop251/types-goja_nodejs-global': 0.0.0-20260918183711-b481721df8a2
@@ -1486,6 +1508,8 @@ snapshots:
   chokidar@5.0.0:
     dependencies:
       readdirp: 5.1.1
+
+  colord@2.14.0: {}
 
   combined-stream@1.0.8:
     dependencies:

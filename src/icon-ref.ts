@@ -1,4 +1,4 @@
-import { TinyColor } from "@ctrl/tinycolor";
+import { colord } from "colord";
 import { delay } from "es-toolkit";
 import { buildIcon, getIcon, iconToHTML } from "iconify-icon";
 import stringHash from "string-hash";
@@ -43,11 +43,12 @@ export class IconRef {
 
     /** 由名字哈希出的稳定颜色，同一图标每次渲染都一样。 */
     get color(): string {
-        return (this.cachedColor ??= new TinyColor({
+        // h 是角度，s / l 是百分比：色相随名字散开，饱和度 70%、亮度 50%
+        return (this.cachedColor ??= colord({
             h: stringHash(this.name) % 360,
-            s: 0.7,
-            l: 0.5,
-        }).toHexString());
+            s: 70,
+            l: 50,
+        }).toHex());
     }
 
     /**
